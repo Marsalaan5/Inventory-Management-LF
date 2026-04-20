@@ -1,0 +1,339 @@
+
+.activity-header-section {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    align-items: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    justify-content: space-between;
+    -webkit-justify-content: space-between;
+    -ms-flex-pack: space-between;
+    @include margin-padding(0 0 25px, null);
+    
+    @include respond-below(custom575) {
+        flex-direction: column;
+        align-items: flex-start;
+        
+        button {
+            margin-top: 10px;
+        }
+    }
+    
+    .activity-main-title {
+        font-size: $font-size-16;
+        font-weight: $font-weight-semibold;
+        color: $secondary;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        align-items: center;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        @include margin-padding(0, null);
+    }
+}
+
+// Activity Timeline
+.activity-timeline {
+    position: relative;
+    
+    .activity-item {
+        position: relative;
+        @include margin-padding(0 0 20px, 0 0 20px 0);
+        border-left: 3px solid transparent;
+        border-radius: 5px;
+        transition: all 0.2s ease;
+        
+        &:last-child {
+            margin-bottom: 0;
+            
+            &::before {
+                display: none;
+            }
+        }
+        
+        &::before {
+            content: "";
+            position: absolute;
+            left: 18px;
+            top: 50px;
+            bottom: -20px;
+            width: 2px;
+            background: linear-gradient(to bottom, $gray-400, transparent);
+        }
+        
+        &:hover {
+            background-color: $body-bg;
+            border-left-color: $primary;
+            transform: translateX(2px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+    }
+    
+    .activity-content {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        align-items: flex-start;
+        -webkit-box-align: start;
+        -ms-flex-align: start;
+    }
+    
+    .activity-icon-wrapper {
+        flex-shrink: 0;
+        margin-right: 15px;
+    }
+    
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        align-items: center;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        justify-content: center;
+        -webkit-justify-content: center;
+        -ms-flex-pack: center;
+        @include rounded(50px);
+        flex-shrink: 0;
+        
+        &.bg-linesuccess {
+            background-color: $success;
+        }
+        
+        &.bg-linedanger {
+            background-color: $danger;
+        }
+        
+        &.bg-linewarning {
+            background-color: $warning;
+        }
+        
+        &.bg-lineinfo {
+            background-color: $info;
+        }
+        
+        &.bg-purple {
+            background-color: #6f42c1;
+        }
+        
+        &.bg-primary {
+            background-color: $primary;
+        }
+        
+        &.bg-secondary {
+            background-color: $secondary;
+        }
+    }
+    
+    .activity-details {
+        flex: 1;
+        width: calc(100% - 55px);
+    }
+    
+    .activity-header {
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        align-items: center;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        justify-content: space-between;
+        -webkit-justify-content: space-between;
+        -ms-flex-pack: space-between;
+        @include margin-padding(0 0 5px, null);
+        
+        @include respond-below(custom575) {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+    
+    .activity-title {
+        font-size: $font-size-base;
+        font-weight: $font-weight-semibold;
+        color: $black;
+        @include margin-padding(0, null);
+        
+        @include respond-below(custom575) {
+            font-size: $font-size-14;
+        }
+    }
+    
+    .activity-time {
+        font-size: $font-size-13;
+        color: $gray-600;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        align-items: center;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        white-space: nowrap;
+        
+        @include respond-below(custom575) {
+            margin-top: 5px;
+        }
+    }
+    
+    .activity-user {
+        font-size: $font-size-13;
+        color: $gray-600;
+        @include margin-padding(5px 0, null);
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        align-items: center;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+    }
+    
+    .activity-date {
+        font-size: $font-size-13;
+        color: $gray-600;
+        display: -webkit-box;
+        display: -ms-flexbox;
+        display: flex;
+        align-items: center;
+        -webkit-box-align: center;
+        -ms-flex-align: center;
+        @include margin-padding(5px 0 0, null);
+    }
+    
+    .activity-details-box {
+        @include margin-padding(10px 0 0, 15px);
+        background-color: $white;
+        border: 1px solid $gray-400;
+        @include rounded(5px);
+        
+        strong {
+            display: block;
+            font-size: $font-size-14;
+            font-weight: $font-weight-semibold;
+            color: $secondary;
+            @include margin-padding(0 0 5px, null);
+        }
+    }
+    
+    .activity-json {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        background-color: $body-bg;
+        @include margin-padding(0, 10px);
+        border-radius: 3px;
+        font-size: $font-size-13;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+}
+
+// Activity Modal
+.activity-modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+    
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+        background: $light;
+        @include rounded(10px);
+    }
+    
+    &::-webkit-scrollbar-thumb {
+        background: $gray-600;
+        @include rounded(10px);
+        
+        &:hover {
+            background: $secondary;
+        }
+    }
+}
+
+.activity-timeline-modal {
+    .activity-item {
+        @include margin-padding(0 0 15px, null);
+        
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
+// Empty State
+.activity-empty {
+    text-align: center;
+    @include margin-padding(null, 40px 20px);
+    
+    svg {
+        opacity: 0.5;
+        margin-bottom: 15px;
+    }
+    
+    p {
+        font-size: $font-size-base;
+        color: $gray-600;
+    }
+}
+
+// Animation
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.activity-item {
+    animation: slideIn 0.3s ease-out;
+}
+
+// Responsive adjustments
+@include respond-below(custom768) {
+    .activity-icon {
+        width: 36px !important;
+        height: 36px !important;
+    }
+    
+    .activity-item {
+        @include margin-padding(null, 10px);
+    }
+    
+    .activity-title {
+        font-size: $font-size-14;
+    }
+    
+    .activity-time,
+    .activity-user,
+    .activity-date {
+        font-size: $font-size-12;
+    }
+}
+
+// Print styles
+@media print {
+    .activity-item {
+        &:hover {
+            background-color: transparent !important;
+            transform: none;
+            box-shadow: none;
+        }
+    }
+    
+    .btn {
+        display: none;
+    }
+    
+    .activity-modal-body {
+        max-height: none;
+        overflow: visible;
+    }
+}
