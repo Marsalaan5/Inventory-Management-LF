@@ -488,6 +488,10 @@ const StatusIcon = ({ status }) => {
   return <AlertCircle size={16} className="text-secondary" />;
 };
 
+StatusIcon.propTypes = {
+  status: PropTypes.string,
+};
+
 const StockFlowDetails = () => {
   const { id }    = useParams();
   const navigate  = useNavigate();
@@ -913,8 +917,6 @@ const StockFlowDetails = () => {
   );
 };
 
-StatusIcon.propTypes = {
-  status: PropTypes.string,
-};
+
 
 export default StockFlowDetails;
