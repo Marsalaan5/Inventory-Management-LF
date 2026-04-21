@@ -1,0 +1,39 @@
+name: Fullstack CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Frontend
+        run: npm ci
+        working-directory: InventoryManagement
+
+      - name: Build Frontend
+        run: npm run build
+        working-directory: InventoryManagement
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Backend
+        run: npm ci
+        working-directory: inventory-backend
+
+      - name: Test Backend
+        run: npm test
+        working-directory: inventory-backend
