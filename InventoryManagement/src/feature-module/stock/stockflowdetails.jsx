@@ -469,6 +469,7 @@ import {
 } from "feather-icons-react/build/IconComponents";
 import AuthService from "../../services/authService";
 import Table from "../../core/pagination/datatable";
+import PropTypes from "prop-types";
 
 const MySwal = withReactContent(Swal);
 
@@ -912,6 +913,10 @@ const StockFlowDetails = () => {
       </div>
     </div>
   );
+};
+
+StockFlowDetails.propTypes = {
+  status: PropTypes.string,
 };
 
 export default StockFlowDetails;
