@@ -88,7 +88,7 @@
 
 //   const canSync = !!(formData.from_warehouse && formData.to_warehouse);
 
-
+ 
 //   const effectiveTransport = formData.transport || transportOptions[0] || null;
 //   const effectiveStatus    = formData.status    || statusOptions[0]    || null;
 
@@ -206,7 +206,7 @@
 //       setTransportOptions(transportOpts);
 //       setStatusOptions(statusOpts);
 
-
+     
 //       const defaultStatus = statusOpts.find((s) => s.value === "approved") || statusOpts[0] || null;
 //       if (defaultStatus) setField("status", defaultStatus);
 //     } catch (e) {
@@ -265,11 +265,11 @@
 //     if (!fd.from_warehouse || !fd.to_warehouse) return;
 //     if (!products.length) return;
 
-
+ 
 //     const transport = fd.transport || null;
 
 //     if (!transport) {
-
+   
 //       console.warn("syncToDb called without transport in fd — caller should pass override.");
 //     }
 
@@ -323,7 +323,7 @@
 //   // ─────────────────────────────────────────────────────────────────────────
 //   // handleScan — ALWAYS ACTIVE
 //   // ─────────────────────────────────────────────────────────────────────────
-
+  
 //   // const handleScan = useCallback(async (barcode) => {
 //   //   const code = (barcode || "").trim();
 //   //   if (!code) return;
@@ -1141,1163 +1141,6 @@
 
 
 
-// import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-// import { Link, useNavigate } from "react-router-dom";
-// import Select from "react-select";
-// import Swal from "sweetalert2";
-// import withReactContent from "sweetalert2-react-content";
-// import {
-//   ArrowLeft, ChevronUp, Camera, Plus, Package, Send,
-//   Trash2, Upload, RefreshCw, AlertTriangle,
-// } from "feather-icons-react/build/IconComponents";
-// import { OverlayTrigger, Tooltip } from "react-bootstrap";
-// import { useDispatch, useSelector } from "react-redux";
-// import { setToogleHeader } from "../../core/redux/action";
-// import { scanProduct } from "../../core/redux/slices/productSlice";
-// import AuthService from "../../services/authService";
-// import Table from "../../core/pagination/datatable";
-
-// const MySwal = withReactContent(Swal);
-
-// const toast = (icon, title, text, timer = 2000) =>
-//   MySwal.fire({ icon, title, text, timer, showConfirmButton: false, toast: true, position: "top-end" });
-
-// // Maps product status values to badge classes
-// const STATUS_BADGE = {
-//   good:      "badge-success",
-//   faulty:     "badge-info",
-//   broken: "badge-danger",
-// };
-
-
-// const TRANSFERABLE_STATUSES = ["good", "faulty", "broke/burnt"];
-
-// const INITIAL_FORM = {
-//   to_warehouse:  null,   // maps to `to_wh` in API payload
-//   transport:     null,   // maps to `transportation` in API payload
-//   description:   "",
-// };
-
-// // ─────────────────────────────────────────────────────────────────────────────
-// // Helpers
-// // ─────────────────────────────────────────────────────────────────────────────
-
-// const prodItem = (p) => ({
-//   prod_uuid:            p.prod_uuid,
-//   partial_code:         p.partial_code,
-//   article_profile_name: p.article_profile_name,
-//   status:               p.status,
-//   count:                p.quantity_to_transfer || 1,
-// });
-
-// // ─────────────────────────────────────────────────────────────────────────────
-// const AddStockFlow = () => {
-//   const dispatch     = useDispatch();
-//   const navigate     = useNavigate();
-//   const headerToggle = useSelector((s) => s.toggle_header);
-//   const currentUser  = useSelector((s) => s.user?.currentUser);
-
-
-//   const [transportOptions, setTransportOptions] = useState([]);
-
-
-//   const [allWarehouses, setAllWarehouses] = useState([]);
-
-//   const [formData, setFormData] = useState(INITIAL_FORM);
-//   const setField = (key, val) => setFormData((p) => ({ ...p, [key]: val }));
-
-
-//   const [scannedProducts, setScannedProducts]   = useState([]);
-//   const scannedProductsRef                       = useRef([]);
-
-//   const [currentStockId, setCurrentStockId]     = useState(null);
-
-//   const [loadingDraft,  setLoadingDraft]         = useState(true);
-//   const [isScanning,    setIsScanning]           = useState(false);
-//   const [isSyncing,     setIsSyncing]            = useState(false);
-//   const [submitting,    setSubmitting]           = useState(false);
-//   const [productErrors, setProductErrors]        = useState([]);  // [{prod_uuid, errors[]}]
-
-//   const [barcodeInput, setBarcodeInput]          = useState("");
-//   const barcodeRef  = useRef(null);
-//   const scanBuffer  = useRef("");
-//   const lastKeyTime = useRef(0);
-
-//   const [excelFile,      setExcelFile]      = useState(null);
-//   const [importingExcel, setImportingExcel] = useState(false);
-//   const excelInputRef = useRef(null);
-
-//   // ── Derived ──────────────────────────────────────────────────────────────
-//   const totalQty = useMemo(
-//     () => scannedProducts.reduce((s, p) => s + (parseInt(p.quantity_to_transfer) || 0), 0),
-//     [scannedProducts],
-//   );
-
-
-//   const canSync = !!(formData.to_warehouse && (formData.transport || transportOptions[0]));
-
-
-//   const effectiveTransport = formData.transport || transportOptions[0] || null;
-
-//   // ── Mount ─────────────────────────────────────────────────────────────────
-//   useEffect(() => {
-//     (async () => {
-//       await Promise.all([loadAllWarehouses(), loadTransportOptions()]);
-//       await restoreDraft();
-//     })();
-//     // eslint-disable-next-line
-//   }, []);
-
-
-//   useEffect(() => {
-//     if (scannedProducts.length > 0 && canSync) {
-//       syncToDb(scannedProducts, formData);
-//     }
-//     // eslint-disable-next-line
-//   }, [formData.to_warehouse, formData.transport]);
-
-
-//   useEffect(() => {
-//     const handleKey = (e) => {
-//       const now = Date.now();
-//       if (now - lastKeyTime.current > 80) scanBuffer.current = "";
-//       lastKeyTime.current = now;
-
-//       const tag          = e.target.tagName;
-//       const isOtherInput = (tag === "INPUT" || tag === "TEXTAREA") && e.target !== barcodeRef.current;
-//       if (isOtherInput) return;
-
-//       if (e.key === "Enter" && scanBuffer.current.length >= 4) {
-//         e.preventDefault();
-//         const code = scanBuffer.current.trim();
-//         setBarcodeInput(code);
-//         handleScan(code);
-//         scanBuffer.current = "";
-//         return;
-//       }
-//       if (e.key.length === 1) scanBuffer.current += e.key;
-//     };
-//     window.addEventListener("keypress", handleKey);
-//     return () => window.removeEventListener("keypress", handleKey);
-//     // eslint-disable-next-line
-//   }, [formData, scannedProducts, transportOptions]);
-
-//   // Keep ref in sync with state (avoids stale closures in the scanner listener)
-//   const setScanned = (val) => {
-//     setScannedProducts((prev) => {
-//       const next = typeof val === "function" ? val(prev) : val;
-//       scannedProductsRef.current = next;
-//       return next;
-//     });
-//   };
-
-//   // ── Loaders ───────────────────────────────────────────────────────────────
-//   const loadAllWarehouses = async () => {
-//     try {
-//       const res  = await AuthService.getWarehouseDropdown();
-//       const list = (res.data.data || res.data || []).map((w) => ({
-//         value: w.wh_uuid,
-//         label: w.name || w.title,
-//       }));
-//       setAllWarehouses(list);
-//     } catch (e) {
-//       console.error("loadAllWarehouses:", e);
-//     }
-//   };
-
-//   const loadTransportOptions = async () => {
-//     try {
-//       const res     = await AuthService.getStockFlowOptions();
-//       const options = res.data?.data;
-
-//       if (!options) {
-//         toast("error", "Options Error", "Failed to load transport options from server.", 5000);
-//         return;
-//       }
-
-//       const toOpt = (v) =>
-//         typeof v === "object" && v !== null && v.value !== undefined
-//           ? v
-//           : {
-//               value: String(v),
-//               label: String(v)
-//                 .split("_")
-//                 .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-//                 .join(" "),
-//             };
-
-//       const transportOpts = (options.transport || []).map(toOpt);
-//       setTransportOptions(transportOpts);
-
-//       if (!transportOpts.length)
-//         console.warn("Transport options are empty — check stock_flow.transport enum in DB.");
-//     } catch (e) {
-//       console.error("loadTransportOptions error:", e);
-//       toast("error", "Options Error", `Could not load transport options: ${e.message}`, 5000);
-//     }
-//   };
-
-//   // ── Restore draft ─────────────────────────────────────────────────────────
-//   const restoreDraft = async () => {
-//     setLoadingDraft(true);
-//     try {
-//       const res  = await AuthService.getExistingLot();
-//       const body = res.data;
-//       if (!body.is_found || !body.data) return;
-
-//       const lot = body.data;
-//       setCurrentStockId(lot.stock_id);
-//       setFormData((prev) => ({ ...prev, description: lot.bulk_imp_desc || "" }));
-
-//       if (lot.prod_arr?.length) {
-//         // prod_arr from the draft is stored in the backend's own shape;
-//         // map it back to our local shape.
-//         const restored = lot.prod_arr.map((p) => ({
-//           prod_uuid:            p.prod_uuid,
-//           partial_code:         p.partial_code,
-//           article_profile_name: p.article_profile_name || "—",
-//           warehouse_name:       p.warehouse_name || "—",
-//           count:                p.count || 0,           
-//           status:               p.status,
-//           quantity_to_transfer: p.count || 1,
-//           title:                p.title || p.partial_code, 
-//         }));
-//         setScanned(restored);
-
-//         MySwal.fire({
-//           icon: "info",
-//           title: "Draft Restored",
-//           html: `<p><strong>${restored.length}</strong> product(s) from your previous session.</p>
-//                  <small class="text-muted">Stock ID: ${lot.stock_id}</small>`,
-//           timer: 3500,
-//           showConfirmButton: false,
-//         });
-//       }
-//     } catch (err) {
-//       console.warn("No draft found:", err.message);
-//     } finally {
-//       setLoadingDraft(false);
-//     }
-//   };
-
-//   // ── syncToDb ──────────────────────────────────────────────────────────────
-
-//   const syncToDb = useCallback(async (products, fd) => {
-//     if (!fd.to_warehouse) return;
-//     if (!products.length) return;
-
-//     const transport = fd.transport || transportOptions[0] || null;
-//     if (!transport) {
-//       console.warn("syncToDb: no transport available — skipping sync.");
-//       return;
-//     }
-
-//     setIsSyncing(true);
-//     try {
-//       const payload = {
-//         to_wh:          fd.to_warehouse.value,
-//         transportation: transport.value,
-//         prod_arr:       products.map(prodItem),
-//         ...(fd.description ? { description: fd.description } : {}),
-//       };
-
-//       console.log("syncToDb payload:", payload);
-//       const res = await AuthService.stockFlowSync(payload);
-
-
-//       if (!currentStockId) {
-
-//         const draftRes = await AuthService.getExistingLot();
-//         if (draftRes.data?.data?.stock_id) {
-//           setCurrentStockId(draftRes.data.data.stock_id);
-//         }
-//       }
-
-//       console.log("Sync success:", res.data?.message);
-//     } catch (err) {
-//       const msg = err.response?.data?.message || "Failed to sync draft";
-//       toast("error", "Sync Error", msg, 3000);
-//       console.error("syncToDb error:", err.response?.data || err);
-//     } finally {
-//       setIsSyncing(false);
-//     }
-//   }, [currentStockId, transportOptions]);
-
-//   // ── handleScan ────────────────────────────────────────────────────────────
-//   const handleScan = useCallback(async (barcode) => {
-//     const code = (barcode || "").trim();
-//     if (!code) return;
-
-//     // Deduplicate by partial_code (barcode)
-//     if (scannedProductsRef.current.find((p) => p.partial_code === code)) {
-//       toast("warning", "Already Scanned", `Barcode "${code}" is already in the list.`);
-//       setBarcodeInput("");
-//       return;
-//     }
-
-//     setIsScanning(true);
-//     try {
-//       const res     = await dispatch(scanProduct(code)).unwrap();
-//       const product = res.data;
-
-//       // The scan API must return at minimum: prod_uuid, partial_code, status,
-//       // article_profile_name, warehouse_id (for validation), count (available).
-//       if (!product?.prod_uuid) throw new Error(res.message || "Product not found");
-
-//       // Validate product is from the user's own warehouse (server also checks this,
-//       // but we surface it early for a better UX).
-//       if (currentUser?.warehouse_id && product.warehouse_id !== currentUser.warehouse_id) {
-//         MySwal.fire({
-//           icon: "error",
-//           title: "Wrong Warehouse",
-//           text: `This product belongs to "${product.warehouse_name}", not your assigned warehouse.`,
-//         });
-//         setBarcodeInput("");
-//         return;
-//       }
-
-//       // Validate transferable status
-//       if (!TRANSFERABLE_STATUSES.includes(product.status)) {
-//         MySwal.fire({
-//           icon: "error",
-//           title: "Invalid Status",
-//           text: `"${product.title || code}" has status "${product.status}". Only ${TRANSFERABLE_STATUSES.join(", ")} can be transferred.`,
-//         });
-//         setBarcodeInput("");
-//         return;
-//       }
-
-//       const newProd = {
-//         prod_uuid:            product.prod_uuid,
-//         partial_code:         product.partial_code || product.barcode || code,
-//         article_profile_name: product.article_profile_name || "—",
-//         warehouse_name:       product.warehouse_name || "—",
-//         count:                product.count || 0,       // available in warehouse
-//         status:               product.status,
-//         quantity_to_transfer: 1,
-//         title:                product.title || code,    // display only
-//       };
-
-//       const updated = [...scannedProductsRef.current, newProd];
-//       setScanned(updated);
-//       setBarcodeInput("");
-
-//       if (canSync) {
-//         await syncToDb(updated, formData);
-//         toast("success", "Scanned & Saved", newProd.title);
-//       } else {
-//         toast("info", "Scanned (Local)", `"${newProd.title}" added. Select To Warehouse to save draft.`);
-//       }
-//     } catch (err) {
-//       const msg = err.response?.data?.message || err.message || "Product not found";
-//       MySwal.fire({ icon: "error", title: "Not Found", text: msg });
-//     } finally {
-//       setIsScanning(false);
-//       barcodeRef.current?.focus();
-//     }
-//     // eslint-disable-next-line
-//   }, [dispatch, formData, canSync, syncToDb, currentUser]);
-
-//   // ── Remove single product ─────────────────────────────────────────────────
-//   const handleRemoveProduct = useCallback((prod_uuid, partial_code) => {
-//     MySwal.fire({
-//       title: "Remove Product?",
-//       text: "This will remove it from your draft.",
-//       icon: "warning",
-//       showCancelButton: true,
-//       confirmButtonColor: "#d33",
-//       confirmButtonText: "Remove",
-//     }).then(async (result) => {
-//       if (!result.isConfirmed) return;
-//       try {
-//         if (currentStockId) {
-//           // removeLotProduct expects the barcode / partial_code identifier
-//           const res = await AuthService.removeLotProduct(partial_code);
-//           setScanned((prev) => prev.filter((p) => p.prod_uuid !== prod_uuid));
-//           if (res.data?.draft_deleted) {
-//             setCurrentStockId(null);
-//             toast("info", "Draft Cleared", "Last product removed. Draft deleted.");
-//           } else {
-//             toast("success", "Removed", `"${partial_code}" removed.`);
-//           }
-//         } else {
-//           setScanned((prev) => prev.filter((p) => p.prod_uuid !== prod_uuid));
-//           toast("success", "Removed", `"${partial_code}" removed.`);
-//         }
-//       } catch (err) {
-//         toast("error", "Error", err.response?.data?.message || "Failed to remove.", 3000);
-//       }
-//     });
-//   }, [currentStockId]);
-
-//   // ── Remove all selected ───────────────────────────────────────────────────
-//   const handleRemoveSelected = useCallback((selectedUuids) => {
-//     MySwal.fire({
-//       title: `Remove ${selectedUuids.length} product(s)?`,
-//       icon: "warning",
-//       showCancelButton: true,
-//       confirmButtonColor: "#d33",
-//       confirmButtonText: "Remove All",
-//     }).then(async (result) => {
-//       if (!result.isConfirmed) return;
-//       const toRemove = scannedProducts.filter((p) => selectedUuids.includes(p.prod_uuid));
-//       if (currentStockId) {
-//         for (const p of toRemove) {
-//           try { await AuthService.removeLotProduct(p.partial_code); } catch { /* continue */ }
-//         }
-//       }
-//       const remaining = scannedProducts.filter((p) => !selectedUuids.includes(p.prod_uuid));
-//       setScanned(remaining);
-//       if (remaining.length === 0) setCurrentStockId(null);
-//       toast("success", "Removed", `${toRemove.length} product(s) removed.`);
-//     });
-//   }, [scannedProducts, currentStockId]);
-
-//   // ── Discard entire draft ──────────────────────────────────────────────────
-//   const handleDiscardDraft = () => {
-//     MySwal.fire({
-//       title: "Discard entire draft?",
-//       text: "All scanned products will be removed.",
-//       icon: "warning",
-//       showCancelButton: true,
-//       confirmButtonColor: "#d33",
-//       confirmButtonText: "Yes, discard",
-//     }).then(async (result) => {
-//       if (!result.isConfirmed) return;
-//       try {
-//         if (currentStockId) await AuthService.discardDraft();
-//         setScanned([]);
-//         setCurrentStockId(null);
-//         toast("info", "Draft Discarded", "All products cleared.");
-//       } catch (err) {
-//         toast("error", "Error", err.response?.data?.message || "Failed to discard.", 3000);
-//       }
-//     });
-//   };
-
-//   // ── Quantity change ───────────────────────────────────────────────────────
-//   const handleQtyChange = useCallback((prod_uuid, newQty) => {
-//     setScanned((prev) =>
-//       prev.map((p) => {
-//         if (p.prod_uuid !== prod_uuid) return p;
-//         const qty = parseInt(newQty) || 0;
-//         if (qty > p.count) {
-//           toast("warning", "Insufficient Stock", `Only ${p.count} units available.`);
-//           return p;
-//         }
-//         return { ...p, quantity_to_transfer: qty };
-//       }),
-//     );
-//   }, []);
-
-//   // ── Excel import ──────────────────────────────────────────────────────────
-//   const handleExcelImport = async () => {
-//     if (!excelFile) return;
-//     setImportingExcel(true);
-//     try {
-//       const fd = new FormData();
-//       fd.append("excel_file", excelFile);
-//       if (formData.to_warehouse)  fd.append("to_wh",          formData.to_warehouse.value);
-//       if (effectiveTransport)     fd.append("transportation",  effectiveTransport.value);
-//       if (formData.description)   fd.append("description",     formData.description);
-
-//       const res  = await AuthService.importStockFlowFromExcel(fd);
-//       const data = res.data;
-
-//       if (data.data?.stock_id) setCurrentStockId(data.data.stock_id);
-
-//       if (!data.data?.draft_saved && data.data?.products?.length) {
-//         const localProds = data.data.products.map((p) => ({
-//           prod_uuid:            p.prod_uuid,
-//           partial_code:         p.partial_code || p.barcode,
-//           article_profile_name: p.article_profile_name || "—",
-//           warehouse_name:       p.warehouse_name || "—",
-//           count:                p.count || 1,
-//           status:               p.status,
-//           quantity_to_transfer: p.count || 1,
-//           title:                p.title || p.partial_code || p.barcode,
-//         }));
-//         setScanned((prev) => {
-//           const existing = new Set(prev.map((x) => x.prod_uuid));
-//           return [...prev, ...localProds.filter((x) => !existing.has(x.prod_uuid))];
-//         });
-//       } else {
-//         await restoreDraft();
-//       }
-
-//       setExcelFile(null);
-//       if (excelInputRef.current) excelInputRef.current.value = "";
-
-//       const errorLines = (data.data?.error_details || [])
-//         .map((e) => `<li><code>${e.barcode || e.partial_code}</code>: ${e.error}</li>`)
-//         .join("");
-
-//       MySwal.fire({
-//         icon: data.data?.errors > 0 ? "warning" : "success",
-//         title: data.message,
-//         html: `
-//           <p>Added: <strong>${data.data?.added || 0}</strong></p>
-//           <p>Skipped: <strong>${data.data?.skipped || 0}</strong></p>
-//           ${data.data?.errors > 0
-//             ? `<p>Errors: <strong>${data.data.errors}</strong></p><ul class="text-start">${errorLines}</ul>`
-//             : ""}
-//           ${!data.data?.draft_saved
-//             ? `<p class="text-warning mt-2 small">Select To Warehouse to persist draft.</p>`
-//             : ""}
-//         `,
-//       });
-//     } catch (err) {
-//       MySwal.fire({
-//         icon: "error",
-//         title: "Import Failed",
-//         text: err.response?.data?.message || "Import failed.",
-//       });
-//     } finally {
-//       setImportingExcel(false);
-//     }
-//   };
-
-//   // ── Submit ────────────────────────────────────────────────────────────────
-//   /**
-//    * Submit flow:
-//    *  1. Final sync so the DB draft is up-to-date.
-//    *  2. POST /auth/stockFlowSubmit (no body — server reads draft by session user).
-//    *  3. Server validates each product against live inventory, marks is_submitted=TRUE,
-//    *     sets status='in-transit'.
-//    *  4. On success: navigate to /stock-transfer.
-//    */
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     setProductErrors([]);
-
-//     if (!scannedProducts.length) {
-//       toast("warning", "No Products", "Scan at least one product."); return;
-//     }
-//     if (!formData.to_warehouse) {
-//       toast("warning", "Missing", "To Warehouse is required."); return;
-//     }
-//     if (!effectiveTransport) {
-//       toast("warning", "Missing", "No transport options available yet."); return;
-//     }
-//     if (scannedProducts.some((p) => p.quantity_to_transfer <= 0)) {
-//       toast("warning", "Invalid Qty", "All quantities must be greater than 0."); return;
-//     }
-
-//     // Ensure the draft is up to date before submitting
-//     await syncToDb(scannedProducts, formData);
-
-//     setSubmitting(true);
-//     try {
-//       // stockFlowSubmit sends no body — server reads draft by req.user.uuid
-//       const res  = await AuthService.stockFlowSubmit();
-//       const body = res.data;
-
-//       // Backend returns { success: false, data: mistake_prods, message }
-//       // when some products have inventory issues.
-//       if (!body.success) {
-//         // mistake_prods: [{ prod_uuid, status, count }]
-//         const errProds = body.data || [];
-//         if (errProds.length) {
-//           // Map prod_uuid back to partial_code for display
-//           const errorList = errProds.map((ep) => {
-//             const local = scannedProducts.find((p) => p.prod_uuid === ep.prod_uuid);
-//             return {
-//               prod_uuid:    ep.prod_uuid,
-//               partial_code: local?.partial_code || ep.prod_uuid,
-//               title:        local?.title        || ep.prod_uuid,
-//               errors:       [`Requested ${ep.count} but insufficient stock or status mismatch (${ep.status})`],
-//             };
-//           });
-//           setProductErrors(errorList);
-//           MySwal.fire({
-//             icon: "error",
-//             title: "Submission Failed",
-//             html: `<p>${body.message}</p><p class="text-muted small">Inconsistent products are highlighted below.</p>`,
-//           });
-//           return;
-//         }
-//         throw new Error(body.message || "Submission failed.");
-//       }
-
-//       // Success: body.success === true
-//       MySwal.fire({
-//         icon: "success",
-//         title: "Stock Flow Created!",
-//         html: `
-//           <p><strong>Stock ID:</strong> ${currentStockId || "—"}</p>
-//           <p><strong>Products:</strong> ${scannedProducts.length}</p>
-//           <p><strong>Total Quantity:</strong> ${totalQty}</p>
-//           ${formData.to_warehouse ? `<p><strong>To:</strong> ${formData.to_warehouse.label}</p>` : ""}
-//           <p class="text-muted small">Status set to <strong>in-transit</strong></p>
-//         `,
-//         confirmButtonText: "View Stock Flows",
-//       }).then(() => navigate("/stock-transfer"));
-//     } catch (err) {
-//       const msg = err.response?.data?.message || err.message || "Failed to create stock flow.";
-//       const errProds = err.response?.data?.data || [];
-//       if (errProds.length) {
-//         const errorList = errProds.map((ep) => {
-//           const local = scannedProducts.find((p) => p.prod_uuid === ep.prod_uuid);
-//           return {
-//             prod_uuid:    ep.prod_uuid,
-//             partial_code: local?.partial_code || ep.prod_uuid,
-//             title:        local?.title        || ep.prod_uuid,
-//             errors:       [`Count ${ep.count}, status ${ep.status} — inventory mismatch`],
-//           };
-//         });
-//         setProductErrors(errorList);
-//       }
-//       MySwal.fire({ icon: "error", title: "Error", text: msg });
-//     } finally {
-//       setSubmitting(false);
-//     }
-//   };
-
-//   // ── Table columns ─────────────────────────────────────────────────────────
-//   const columns = useMemo(() => {
-//     // Build a lookup from prod_uuid → error messages
-//     const errorMap = Object.fromEntries(
-//       productErrors.map((e) => [e.prod_uuid, e.errors])
-//     );
-
-//     return [
-//       {
-//         title: "#",
-//         render: (_, __, i) => i + 1,
-//         width: "50px",
-//       },
-//       {
-//         title: "Barcode / Code",
-//         dataIndex: "partial_code",
-//         render: (text, record) => (
-//           <span>
-//             <span className="badge badge-primary">{text}</span>
-//             {errorMap[record.prod_uuid] && (
-//               <div className="mt-1">
-//                 {errorMap[record.prod_uuid].map((err, i) => (
-//                   <div key={i} className="text-danger small">
-//                     <AlertTriangle size={12} className="me-1" />{err}
-//                   </div>
-//                 ))}
-//               </div>
-//             )}
-//           </span>
-//         ),
-//       },
-//       {
-//         title: "Product Name",
-//         dataIndex: "title",
-//       },
-//       {
-//         title: "Article Profile",
-//         dataIndex: "article_profile_name",
-//       },
-//       {
-//         title: "Warehouse",
-//         dataIndex: "warehouse_name",
-//       },
-//       {
-//         title: "Status",
-//         dataIndex: "status",
-//         render: (t) => (
-//           <span className={`badge ${STATUS_BADGE[t] || "badge-info"}`}>
-//             {t?.toUpperCase() || "N/A"}
-//           </span>
-//         ),
-//       },
-//       {
-//         title: "Available",
-//         dataIndex: "count",
-//         render: (t) => <span className="badge badge-info">{t}</span>,
-//       },
-//       {
-//         title: "Transfer Qty",
-//         dataIndex: "quantity_to_transfer",
-//         render: (text, record) => (
-//           <input
-//             type="number"
-//             className="form-control form-control-sm"
-//             style={{ width: "80px" }}
-//             value={text}
-//             min="1"
-//             max={record.count}
-//             onChange={(e) => handleQtyChange(record.prod_uuid, e.target.value)}
-//           />
-//         ),
-//       },
-//       {
-//         title: "Action",
-//         width: "80px",
-//         render: (_, record) => (
-//           <button
-//             type="button"
-//             className="btn btn-sm btn-danger"
-//             onClick={() => handleRemoveProduct(record.prod_uuid, record.partial_code)}
-//             title="Remove"
-//           >
-//             <Trash2 size={14} />
-//           </button>
-//         ),
-//       },
-//     ];
-//   }, [productErrors, handleQtyChange, handleRemoveProduct]);
-
-//   // ── Render ────────────────────────────────────────────────────────────────
-//   return (
-//     <div className="page-wrapper">
-//       <div className="content">
-
-//         {/* ── Page Header ── */}
-//         <div className="page-header">
-//           <div className="add-item d-flex">
-//             <div className="page-title">
-//               <h4>Create Stock Flow</h4>
-//               <h6>Scan or import products to create a stock transfer</h6>
-//             </div>
-//           </div>
-//           <ul className="table-top-head">
-//             <li>
-//               <Link to="/stock-transfer" className="btn btn-secondary btn-sm">
-//                 <ArrowLeft size={16} className="me-1" />Back
-//               </Link>
-//             </li>
-//             <li>
-//               <OverlayTrigger placement="top" overlay={<Tooltip>Collapse</Tooltip>}>
-//                 <Link
-//                   id="collapse-header"
-//                   className={headerToggle ? "active" : ""}
-//                   onClick={() => dispatch(setToogleHeader(!headerToggle))}
-//                 >
-//                   <ChevronUp className="feather-chevron-up" />
-//                 </Link>
-//               </OverlayTrigger>
-//             </li>
-//           </ul>
-//         </div>
-
-//         {/* Draft loading indicator */}
-//         {loadingDraft && (
-//           <div className="alert alert-light d-flex align-items-center mb-3">
-//             <span className="spinner-border spinner-border-sm me-2" />
-//             Checking for saved draft…
-//           </div>
-//         )}
-
-//         {/* Active draft banner */}
-//         {!loadingDraft && currentStockId && (
-//           <div className="alert alert-warning d-flex align-items-center justify-content-between mb-3">
-//             <div className="d-flex align-items-center">
-//               <RefreshCw size={16} className="me-2" />
-//               <strong>Active Draft:</strong>
-//               <span className="ms-2 badge badge-warning">{currentStockId}</span>
-//               {isSyncing && (
-//                 <span className="spinner-border spinner-border-sm ms-2 text-muted" />
-//               )}
-//             </div>
-//             {scannedProducts.length > 0 && (
-//               <button
-//                 type="button"
-//                 className="btn btn-sm btn-outline-danger"
-//                 onClick={handleDiscardDraft}
-//               >
-//                 <Trash2 size={14} className="me-1" />Discard Draft
-//               </button>
-//             )}
-//           </div>
-//         )}
-
-//         {/* Product errors (returned from submit) */}
-//         {productErrors.length > 0 && (
-//           <div className="alert alert-danger mb-3">
-//             <h6 className="mb-2">
-//               <AlertTriangle size={16} className="me-2" />
-//               {productErrors.length} product(s) failed validation — correct them and resubmit.
-//             </h6>
-//             <ul className="mb-0">
-//               {productErrors.map((e, i) => (
-//                 <li key={i}>
-//                   <strong>{e.title || e.partial_code}</strong> ({e.partial_code}):{" "}
-//                   {e.errors.join("; ")}
-//                 </li>
-//               ))}
-//             </ul>
-//           </div>
-//         )}
-
-//         {/* ── Stock Flow Details ── */}
-//         <div className="card mb-3">
-//           <div className="card-body">
-//             <h5 className="mb-4">Stock Flow Details</h5>
-
-//             {/* From Warehouse — read-only, sourced from session */}
-//             {currentUser?.warehouse_name && (
-//               <div className="row mb-3">
-//                 <div className="col-lg-6">
-//                   <label className="form-label">From Warehouse</label>
-//                   <input
-//                     type="text"
-//                     className="form-control bg-light"
-//                     value={currentUser.warehouse_name}
-//                     readOnly
-//                     disabled
-//                   />
-//                   <small className="text-muted">
-//                     Your assigned warehouse (set by your account)
-//                   </small>
-//                 </div>
-//               </div>
-//             )}
-
-//             <div className="row mb-3">
-//               {/* To Warehouse */}
-//               <div className="col-lg-6">
-//                 <label className="form-label">
-//                   To Warehouse <span className="text-danger">*</span>
-//                 </label>
-//                 <Select
-//                   options={allWarehouses}
-//                   value={formData.to_warehouse}
-//                   onChange={(opt) => setField("to_warehouse", opt)}
-//                   placeholder="Select destination warehouse"
-//                   isClearable
-//                 />
-//               </div>
-
-//               {/* Transport */}
-//               <div className="col-lg-6">
-//                 <label className="form-label">
-//                   Transport <span className="text-danger">*</span>
-//                   {transportOptions.length === 0 && (
-//                     <span className="spinner-border spinner-border-sm ms-2" />
-//                   )}
-//                 </label>
-//                 <Select
-//                   options={transportOptions}
-//                   value={formData.transport}
-//                   onChange={(opt) => setField("transport", opt)}
-//                   placeholder={
-//                     transportOptions.length === 0 ? "Loading…" : "Select transport method"
-//                   }
-//                   isLoading={transportOptions.length === 0}
-//                 />
-//                 {transportOptions.length > 0 && !formData.transport && (
-//                   <small className="text-muted">
-//                     Defaults to <strong>{transportOptions[0]?.label}</strong> if not selected
-//                   </small>
-//                 )}
-//               </div>
-//             </div>
-
-//             <div className="row mb-3">
-//               {/* Description */}
-//               <div className="col-lg-6">
-//                 <label className="form-label">Description</label>
-//                 <textarea
-//                   className="form-control"
-//                   value={formData.description}
-//                   onChange={(e) => setField("description", e.target.value)}
-//                   rows="2"
-//                   placeholder="Notes about this transfer…"
-//                 />
-//               </div>
-
-//               {/* Total Qty — auto-calculated */}
-//               <div className="col-lg-6">
-//                 <label className="form-label">Total Quantity</label>
-//                 <input
-//                   type="number"
-//                   className="form-control bg-light"
-//                   value={totalQty}
-//                   readOnly
-//                   disabled
-//                   style={{ fontWeight: "bold", fontSize: "1.1rem" }}
-//                 />
-//                 <small className="text-muted">Auto-calculated from scanned products</small>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* ── Scan Barcode — always active ── */}
-//         <div className="card mb-3">
-//           <div className="card-body">
-//             <div className="d-flex align-items-center mb-3">
-//               <Camera size={22} className="text-primary me-2" />
-//               <h5 className="mb-0">Scan Barcode</h5>
-//               <span className="badge badge-success ms-2" style={{ fontSize: "0.7rem" }}>
-//                 Always Active
-//               </span>
-//             </div>
-
-//             {!canSync ? (
-//               <div className="alert alert-info d-flex align-items-center mb-3">
-//                 <span className="me-2 flex-shrink-0">ℹ</span>
-//                 <div>
-//                   <strong>Scanning is available now.</strong> Products will be held locally.
-//                   <span className="d-block mt-1 text-muted small">
-//                     Select a <strong>To Warehouse</strong> above to auto-save each scan to draft.
-//                   </span>
-//                 </div>
-//               </div>
-//             ) : (
-//               <div className="alert alert-success d-flex align-items-center mb-3">
-//                 <span className="me-2 flex-shrink-0">✓</span>
-//                 <div>
-//                   <strong>Ready to scan &amp; auto-save!</strong> Each scan is saved to draft.
-//                   <div className="mt-1">
-//                     To: <strong>{formData.to_warehouse?.label}</strong>
-//                     {!formData.transport && effectiveTransport && (
-//                       <span className="ms-2 badge badge-secondary" style={{ fontSize: "0.75rem" }}>
-//                         Transport: {effectiveTransport.label} (default)
-//                       </span>
-//                     )}
-//                   </div>
-//                 </div>
-//               </div>
-//             )}
-
-//             <div className="row align-items-end">
-//               <div className="col-lg-8">
-//                 <label className="form-label">
-//                   Scan or Enter Barcode
-//                   {(isScanning || isSyncing) && (
-//                     <span className="spinner-border spinner-border-sm ms-2" />
-//                   )}
-//                 </label>
-//                 <input
-//                   ref={barcodeRef}
-//                   type="text"
-//                   className="form-control"
-//                   value={barcodeInput}
-//                   onChange={(e) => setBarcodeInput(e.target.value)}
-//                   onKeyDown={(e) => {
-//                     if (e.key === "Enter") { e.preventDefault(); handleScan(barcodeInput); }
-//                   }}
-//                   placeholder="Use scanner or type barcode then press Enter"
-//                   disabled={isScanning}
-//                   autoFocus
-//                 />
-//               </div>
-//               <div className="col-lg-4">
-//                 <button
-//                   type="button"
-//                   className="btn btn-primary w-100"
-//                   onClick={() => handleScan(barcodeInput)}
-//                   disabled={!barcodeInput.trim() || isScanning}
-//                 >
-//                   {isScanning ? (
-//                     <><span className="spinner-border spinner-border-sm me-2" />Scanning…</>
-//                   ) : (
-//                     <><Plus size={16} className="me-1" />Add Product</>
-//                   )}
-//                 </button>
-//               </div>
-//             </div>
-// {/* */}
-//             {scannedProducts.length > 0 && (
-//               <div className="alert alert-success d-flex align-items-center mt-3 mb-0">
-//                 <Package size={18} className="me-2" />
-//                 <strong>
-//                   {scannedProducts.length} product(s) &nbsp;|&nbsp; Total Qty: {totalQty}
-//                   {isSyncing && (
-//                     <span className="ms-2 text-muted small">saving…</span>
-//                   )}
-//                   {!canSync && (
-//                     <span className="ms-2 text-warning small">
-//                       ⚠ Unsaved — select To Warehouse to persist
-//                     </span>
-//                   )}
-//                 </strong>
-//               </div>
-//             )}
-//           </div>
-//         </div>
-
-//         {/* ── Excel Import — always active ── */}
-//         <div className="card mb-3">
-//           <div className="card-body">
-//             <div className="d-flex align-items-center mb-3">
-//               <svg
-//                 xmlns="http://www.w3.org/2000/svg"
-//                 width="22" height="22"
-//                 viewBox="0 0 24 24"
-//                 fill="none"
-//                 stroke="currentColor"
-//                 strokeWidth="2"
-//                 strokeLinecap="round"
-//                 strokeLinejoin="round"
-//                 style={{ color: "#198754" }}
-//                 className="me-2"
-//               >
-//                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-//                 <line x1="3"  y1="9"  x2="21" y2="9"/>
-//                 <line x1="3"  y1="15" x2="21" y2="15"/>
-//                 <line x1="9"  y1="3"  x2="9"  y2="21"/>
-//                 <line x1="15" y1="3"  x2="15" y2="21"/>
-//               </svg>
-//               <h5 className="mb-0">Import from Excel / CSV</h5>
-//               <span className="badge badge-success ms-2" style={{ fontSize: "0.7rem" }}>
-//                 Always Active
-//               </span>
-//             </div>
-
-//             <p className="text-muted small mb-3">
-//               Upload a file with a <code>barcode</code> column (optional:{" "}
-//               <code>quantity_to_transfer</code> or <code>count</code>). Products are validated
-//               immediately. If <strong>To Warehouse</strong> is selected, the draft is saved
-//               automatically.
-//             </p>
-
-//             <div className="row align-items-end">
-//               <div className="col-lg-8">
-//                 <label className="form-label">Select Excel / CSV File</label>
-//                 <input
-//                   ref={excelInputRef}
-//                   type="file"
-//                   className="form-control"
-//                   accept=".xlsx,.xls,.csv"
-//                   onChange={(e) => setExcelFile(e.target.files[0] || null)}
-//                 />
-//                 {excelFile && (
-//                   <small className="text-muted">
-//                     Selected: {excelFile.name} ({(excelFile.size / 1024).toFixed(1)} KB)
-//                   </small>
-//                 )}
-//               </div>
-//               <div className="col-lg-4">
-//                 <button
-//                   type="button"
-//                   className="btn btn-success w-100"
-//                   onClick={handleExcelImport}
-//                   disabled={!excelFile || importingExcel}
-//                 >
-//                   {importingExcel ? (
-//                     <><span className="spinner-border spinner-border-sm me-2" />Importing…</>
-//                   ) : (
-//                     <><Upload size={16} className="me-1" />Import Excel</>
-//                   )}
-//                 </button>
-//               </div>
-//             </div>
-
-//             {/* CSV template download */}
-//             <div className="mt-2">
-//               <small className="text-muted">
-//                 Need a template?{" "}
-//                 <a
-//                   href="#"
-//                   onClick={(e) => {
-//                     e.preventDefault();
-//                     const csv =
-//                       "data:text/csv;charset=utf-8," +
-//                       [
-//                         ["barcode", "quantity_to_transfer"],
-//                         ["BARCODE001", 1],
-//                         ["BARCODE002", 2],
-//                       ]
-//                         .map((r) => r.join(","))
-//                         .join("\n");
-//                     const link = document.createElement("a");
-//                     link.setAttribute("href", encodeURI(csv));
-//                     link.setAttribute("download", "stock_flow_template.csv");
-//                     link.click();
-//                   }}
-//                 >
-//                   Download CSV template
-//                 </a>
-//               </small>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* ── Scanned Products Table ── */}
-//         {scannedProducts.length > 0 && (
-//           <div className="card mb-3">
-//             <div className="card-body">
-//               <div className="d-flex align-items-center justify-content-between mb-3">
-//                 <h5 className="mb-0">
-//                   <Package size={18} className="me-2" />
-//                   Scanned Products ({scannedProducts.length})
-//                 </h5>
-//                 <button
-//                   type="button"
-//                   className="btn btn-sm btn-outline-danger"
-//                   onClick={() => handleRemoveSelected(scannedProducts.map((p) => p.prod_uuid))}
-//                 >
-//                   <Trash2 size={14} className="me-1" />Remove All
-//                 </button>
-//               </div>
-//               <div className="table-responsive">
-//                 <Table columns={columns} dataSource={scannedProducts} />
-//               </div>
-//             </div>
-//           </div>
-//         )}
-
-//         {/* ── Transfer Summary ── */}
-//         {scannedProducts.length > 0 && (
-//           <div className="alert alert-warning mb-3">
-//             <strong>Transfer Summary</strong>
-//             <ul className="mb-0 mt-2">
-//               <li>Total Products: {scannedProducts.length}</li>
-//               <li>Total Quantity: {totalQty} units</li>
-//               {currentUser?.warehouse_name && (
-//                 <li>From: {currentUser.warehouse_name}</li>
-//               )}
-//               {formData.to_warehouse && (
-//                 <li>To: {formData.to_warehouse.label}</li>
-//               )}
-//               {effectiveTransport && (
-//                 <li>
-//                   Transport: {effectiveTransport.label}
-//                   {!formData.transport ? " (default)" : ""}
-//                 </li>
-//               )}
-//               {/* Status is always 'approved' on draft; 'in-transit' after submit */}
-//               <li>
-//                 Status after submit: <strong>in-transit</strong>
-//               </li>
-//               {currentStockId && (
-//                 <li>
-//                   Draft Stock ID: <strong>{currentStockId}</strong>
-//                 </li>
-//               )}
-//             </ul>
-//             <small className="text-muted d-block mt-1">
-//               Inventory will be updated on submission.
-//             </small>
-//           </div>
-//         )}
-
-//         {/* ── Submit / Cancel ── */}
-//         <div className="col-lg-12">
-//           <div className="btn-addproduct mb-4">
-//             <Link to="/stock-transfer" className="btn btn-cancel me-2">
-//               Cancel
-//             </Link>
-//             <button
-//               type="button"
-//               className="btn btn-submit"
-//               onClick={handleSubmit}
-//               disabled={submitting || scannedProducts.length === 0 || !canSync}
-//             >
-//               {submitting ? (
-//                 <><span className="spinner-border spinner-border-sm me-2" />Submitting…</>
-//               ) : (
-//                 <><Send size={16} className="me-1" />Create Stock Flow</>
-//               )}
-//             </button>
-//           </div>
-//         </div>
-
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default AddStockFlow;
-
-
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Select from "react-select";
@@ -2305,7 +1148,7 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import {
   ArrowLeft, ChevronUp, Camera, Plus, Package, Send,
-  Trash2, Upload, RefreshCw, AlertTriangle, FileText, X,
+  Trash2, Upload, RefreshCw, AlertTriangle,
 } from "feather-icons-react/build/IconComponents";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
@@ -2319,201 +1162,115 @@ const MySwal = withReactContent(Swal);
 const toast = (icon, title, text, timer = 2000) =>
   MySwal.fire({ icon, title, text, timer, showConfirmButton: false, toast: true, position: "top-end" });
 
-const INITIAL_FORM = {
-  to_warehouse: null,
-  transport: null,
-  description: "",
+
+const STATUS_BADGE = {
+  good:      "badge-success",
+  faulty:     "badge-info",
+  broken: "badge-danger",
 };
 
 
-// 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+const TRANSFERABLE_STATUSES = ["good", "faulty", "broke/burnt"];
 
-const toProdItem = (p) => ({
-  prod_uuid: p.prod_uuid,
-  partial_code: p.partial_code,
+const INITIAL_FORM = {
+  to_warehouse:  null,  
+  transport:     null,  
+  description:   "",
+};
+
+
+// const toApiProdItem = (p) => ({
+//   prod_uuid:            p.prod_uuid,
+//   partial_code:         p.partial_code,
+//   article_profile_name: p.article_profile_name,
+//   status:               p.status,
+//   count:                p.quantity_to_transfer || 1,
+// });
+
+const toApiProdItem = (p) => ({
+  prod_uuid:            p.prod_uuid,
+  partial_code:         p.partial_code,
+  article_profile_id:   p.article_profile_id,
   article_profile_name: p.article_profile_name,
-  status: p.status,
-  count: parseInt(p.quantity_to_transfer) || 1,
+  status:               p.status,
+  count:                p.quantity_to_transfer || 1,
 });
 
-const toSelectOpt = (v) =>
-  typeof v === "object" && v !== null && v.value !== undefined
-    ? v
-    : {
-      value: String(v),
-      label: String(v)
-        .split("_")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" "),
-    };
-
-// 
+// ─────────────────────────────────────────────────────────────────────────────
 const AddStockFlow = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const dispatch     = useDispatch();
+  const navigate     = useNavigate();
   const headerToggle = useSelector((s) => s.toggle_header);
-  const currentUser = useSelector((s) => s.user?.currentUser);
+  const currentUser  = useSelector((s) => s.user?.currentUser);
 
-  // ── Options
+
   const [transportOptions, setTransportOptions] = useState([]);
-  const [statusBadgeMap, setStatusBadgeMap] = useState({});
-  const [transferableStatuses, setTransferableStatuses] = useState([]);
 
-  // ── Warehouse list
+
   const [allWarehouses, setAllWarehouses] = useState([]);
 
-  // ── Form 
   const [formData, setFormData] = useState(INITIAL_FORM);
   const setField = (key, val) => setFormData((p) => ({ ...p, [key]: val }));
 
-  // Invoice (required)
-  const [invoiceFile, setInvoiceFile] = useState(null);
-  const [invoicePreview, setInvoicePreview] = useState(null);
-  const [invoiceError, setInvoiceError] = useState("");
-  const invoiceInputRef = useRef(null);
 
-  // ── Products 
-  const [scannedProducts, setScannedProducts] = useState([]);
-  const scannedProductsRef = useRef([]);
+  const [scannedProducts, setScannedProducts]   = useState([]);
+  const scannedProductsRef                       = useRef([]);
 
-  // ── Draft 
-  const [currentStockId, setCurrentStockId] = useState(null);
+  const [currentStockId, setCurrentStockId]     = useState(null);
 
-  // ── Loading / busy flags 
-  const [loadingDraft, setLoadingDraft] = useState(true);
-  const [isScanning, setIsScanning] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [loadingDraft,  setLoadingDraft]         = useState(true);
+  const [isScanning,    setIsScanning]           = useState(false);
+  const [isSyncing,     setIsSyncing]            = useState(false);
+  const [submitting,    setSubmitting]           = useState(false);
+  const [productErrors, setProductErrors]        = useState([]);  // [{prod_uuid, errors[]}]
 
-  // ── Validation errors from submit 
-  const [productErrors, setProductErrors] = useState([]);
-
-  // ── Barcode scanner 
-  const [barcodeInput, setBarcodeInput] = useState("");
-  const barcodeRef = useRef(null);
-  const scanBuffer = useRef("");
+  const [barcodeInput, setBarcodeInput]          = useState("");
+  const barcodeRef  = useRef(null);
+  const scanBuffer  = useRef("");
   const lastKeyTime = useRef(0);
-  const syncTimerRef = useRef(null);
 
- 
-  const restoringDraft = useRef(false);
-
-  // ── Excel import 
-  const [excelFile, setExcelFile] = useState(null);
+  const [excelFile,      setExcelFile]      = useState(null);
   const [importingExcel, setImportingExcel] = useState(false);
   const excelInputRef = useRef(null);
 
-  // ── Derived 
+  // ── Derived ──────────────────────────────────────────────────────────────
   const totalQty = useMemo(
     () => scannedProducts.reduce((s, p) => s + (parseInt(p.quantity_to_transfer) || 0), 0),
     [scannedProducts],
   );
 
+
+  const canSync = !!(formData.to_warehouse && (formData.transport || transportOptions[0]));
+
+  
   const effectiveTransport = formData.transport || transportOptions[0] || null;
 
-  // const canSync = !!(formData.to_warehouse && effectiveTransport && invoiceFile);
 
-const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile || currentStockId));
-  const canSubmit = canSync && scannedProducts.length > 0;
-
-  // ── Keep ref in sync 
-  const setScanned = (val) => {
-    setScannedProducts((prev) => {
-      const next = typeof val === "function" ? val(prev) : val;
-      scannedProductsRef.current = next;
-      return next;
-    });
-  };
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Invoice helpers
-  // ─────────────────────────────────────────────────────────────────────────
-  const ALLOWED_INVOICE_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
-  const MAX_INVOICE_SIZE_MB = 5;
-
-  const handleInvoiceChange = (file) => {
-    setInvoiceError("");
-    if (!file) { setInvoiceFile(null); setInvoicePreview(null); return; }
-
-    if (!ALLOWED_INVOICE_TYPES.includes(file.type)) {
-      setInvoiceError("Only JPG, PNG, WEBP, or PDF files are accepted.");
-      setInvoiceFile(null); setInvoicePreview(null); return;
-    }
-    if (file.size > MAX_INVOICE_SIZE_MB * 1024 * 1024) {
-      setInvoiceError(`File exceeds ${MAX_INVOICE_SIZE_MB} MB limit.`);
-      setInvoiceFile(null); setInvoicePreview(null); return;
-    }
-
-    setInvoiceFile(file);
-
-    if (file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (e) => setInvoicePreview(e.target.result);
-      reader.readAsDataURL(file);
-    } else {
-      setInvoicePreview("pdf");
-    }
-  };
-
-  const handleInvoiceDrop = (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleInvoiceChange(file);
-  };
-
-  const clearInvoice = () => {
-    setInvoiceFile(null);
-    setInvoicePreview(null);
-    setInvoiceError("");
-    if (invoiceInputRef.current) invoiceInputRef.current.value = "";
-  };
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Mount — load options + warehouses first, then restore draft
-  // ─────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
-      await Promise.all([loadOptions(), loadAllWarehouses()]);
+      await Promise.all([loadAllWarehouses(), loadTransportOptions()]);
       await restoreDraft();
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, []);
 
-  // Re-sync when warehouse/transport changes
+  
   useEffect(() => {
     if (scannedProducts.length > 0 && canSync) {
       syncToDb(scannedProducts, formData);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [formData.to_warehouse, formData.transport]);
 
-
-  useEffect(() => {
-    if (scannedProducts.length === 0 || !canSync) return;
-    if (restoringDraft.current) return; 
-
-    clearTimeout(syncTimerRef.current);
-    syncTimerRef.current = setTimeout(() => {
-      syncToDb(scannedProducts, formData);
-    }, 800);
-
-    return () => clearTimeout(syncTimerRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scannedProducts]);
-
-  // Global hardware-scanner keypress
+ 
   useEffect(() => {
     const handleKey = (e) => {
       const now = Date.now();
       if (now - lastKeyTime.current > 80) scanBuffer.current = "";
       lastKeyTime.current = now;
 
-      const tag = e.target.tagName;
-      const isOtherInput =
-        (tag === "INPUT" || tag === "TEXTAREA") && e.target !== barcodeRef.current;
+      const tag          = e.target.tagName;
+      const isOtherInput = (tag === "INPUT" || tag === "TEXTAREA") && e.target !== barcodeRef.current;
       if (isOtherInput) return;
 
       if (e.key === "Enter" && scanBuffer.current.length >= 4) {
@@ -2528,391 +1285,351 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
     };
     window.addEventListener("keypress", handleKey);
     return () => window.removeEventListener("keypress", handleKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData, scannedProducts, transportOptions, transferableStatuses]);
+    // eslint-disable-next-line
+  }, [formData, scannedProducts, transportOptions]);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Loaders
-  // ─────────────────────────────────────────────────────────────────────────
-  const loadOptions = async () => {
-    try {
-      const res = await AuthService.getStockFlowOptions();
-      const options = res.data?.data;
-      if (!options) { toast("error", "Options Error", "Failed to load options.", 5000); return; }
-
-      const transportOpts = (options.transport || []).map(toSelectOpt);
-      setTransportOptions(transportOpts);
-
-      const allStatuses = options.product_status || [];
-      const xferStatuses = options.transferable_statuses || allStatuses;
-
-      const colourCycle = ["badge-success", "badge-info", "badge-warning", "badge-danger", "badge-primary", "badge-secondary"];
-      const badgeMap = {};
-      allStatuses.forEach((s, i) => {
-        const sl = s.toLowerCase();
-        if (sl.includes("good") || sl.includes("ok")) badgeMap[s] = "badge-success";
-        else if (sl.includes("fault") || sl.includes("warn")) badgeMap[s] = "badge-warning";
-        else if (sl.includes("broke") || sl.includes("burnt") || sl.includes("dead") || sl.includes("bad")) badgeMap[s] = "badge-danger";
-        else badgeMap[s] = colourCycle[i % colourCycle.length];
-      });
-      setStatusBadgeMap(badgeMap);
-      setTransferableStatuses(xferStatuses);
-    } catch (e) {
-      toast("error", "Options Error", `Could not load options: ${e.message}`, 5000);
-    }
+  // Keep ref in sync with state (avoids stale closures in the scanner listener)
+  const setScanned = (val) => {
+    setScannedProducts((prev) => {
+      const next = typeof val === "function" ? val(prev) : val;
+      scannedProductsRef.current = next;
+      return next;
+    });
   };
+
 
   const loadAllWarehouses = async () => {
     try {
-      const res = await AuthService.getWarehouseDropdown();
-      const list = (res.data.data || res.data || [])
-        .filter((w) => w.wh_uuid !== currentUser?.warehouse_id)
-        .map((w) => ({
-          value: w.wh_uuid,
-          label: w.name || w.title,
-        }));
+      const res  = await AuthService.getWarehouseDropdown();
+      const list = (res.data.data || res.data || []).map((w) => ({
+        value: w.wh_uuid,
+        label: w.name || w.title,
+      }));
       setAllWarehouses(list);
     } catch (e) {
       console.error("loadAllWarehouses:", e);
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Restore draft — fetches the un-submitted draft for this user from DB
-  // ─────────────────────────────────────────────────────────────────────────
+  const loadTransportOptions = async () => {
+    try {
+      const res     = await AuthService.getStockFlowOptions();
+      const options = res.data?.data;
+
+      if (!options) {
+        toast("error", "Options Error", "Failed to load transport options from server.", 5000);
+        return;
+      }
+
+      const toOpt = (v) =>
+        typeof v === "object" && v !== null && v.value !== undefined
+          ? v
+          : {
+              value: String(v),
+              label: String(v)
+                .split("_")
+                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" "),
+            };
+
+      const transportOpts = (options.transport || []).map(toOpt);
+      setTransportOptions(transportOpts);
+
+      if (!transportOpts.length)
+        console.warn("Transport options are empty — check stock_flow.transport enum in DB.");
+    } catch (e) {
+      console.error("loadTransportOptions error:", e);
+      toast("error", "Options Error", `Could not load transport options: ${e.message}`, 5000);
+    }
+  };
+
+//restore draft
   const restoreDraft = async () => {
     setLoadingDraft(true);
-    restoringDraft.current = true; // block debounced sync while we populate state
     try {
-      const res = await AuthService.get_existing_stock_flow();
+      const res  = await AuthService.getExistingStock();
       const body = res.data;
-
-      if (!body.is_found || !body.data) return; // no draft — nothing to do
+      if (!body.is_found || !body.data) return;
 
       const lot = body.data;
       setCurrentStockId(lot.stock_id);
-
-      // transport comes back as a plain enum string — wrap it for <Select>
-      setFormData((prev) => ({
-        ...prev,
-        to_warehouse: lot.to_warehouse?.wh_uuid
-          ? { value: lot.to_warehouse.wh_uuid, label: lot.to_warehouse.name }
-          : prev.to_warehouse,
-        transport: lot.transport ? toSelectOpt(lot.transport) : prev.transport,
-        description: lot.description || prev.description,
-      }));
+      setFormData((prev) => ({ ...prev, description: lot.bulk_imp_desc || "" }));
 
       if (lot.prod_arr?.length) {
+        // prod_arr from the draft is stored in the backend's own shape;
+        // map it back to our local shape.
         const restored = lot.prod_arr.map((p) => ({
-          prod_uuid: p.prod_uuid,
-          partial_code: p.partial_code,
+          prod_uuid:            p.prod_uuid,
+          partial_code:         p.partial_code,
           article_profile_name: p.article_profile_name || "—",
-          warehouse_name: p.warehouse_name || "—",
-          status: p.status,
-          count: p.available ?? p.count ?? 1,      // live available qty in warehouse
-          quantity_to_transfer: p.count ?? 1,       // qty the user chose to transfer
+          warehouse_name:       p.warehouse_name || "—",
+          count:                p.count || 0,           
+          status:               p.status,
+          quantity_to_transfer: p.count || 1,
+          // title:                p.title || p.partial_code, 
         }));
         setScanned(restored);
 
         MySwal.fire({
           icon: "info",
           title: "Draft Restored",
-          html: `
-            <p><strong>${restored.length}</strong> product(s) from your previous session.</p>
-            <p class="text-muted small">Stock ID: ${lot.stock_id}</p>
-            <p class="text-warning small mt-1">⚠ Please re-upload the invoice to continue.</p>
-          `,
-          timer: 4500,
+          html: `<p><strong>${restored.length}</strong> product(s) from your previous session.</p>
+                 <small class="text-muted">Stock ID: ${lot.stock_id}</small>`,
+          timer: 3500,
           showConfirmButton: false,
         });
       }
     } catch (err) {
-      if (err.response?.status !== 404) console.warn("restoreDraft error:", err.message);
+      console.warn("No draft found:", err.message);
     } finally {
       setLoadingDraft(false);
-      // Give React time to flush the setScanned call before re-enabling the
-      // debounced sync effect — prevents a spurious "Invoice Required" warning.
-      setTimeout(() => { restoringDraft.current = false; }, 300);
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // syncToDb
-  // ─────────────────────────────────────────────────────────────────────────
-  const syncToDb = useCallback(
-    async (products, fd, overrideStockId) => {
-      if (!fd.to_warehouse) return;
-      if (!products.length) return;
+  // ── syncToDb ──────────────────────────────────────────────────────────────
+
+  const syncToDb = useCallback(async (products, fd) => {
+    if (!fd.to_warehouse) return;
+    if (!products.length) return;
+
+    const transport = fd.transport || transportOptions[0] || null;
+    if (!transport) {
+      console.warn("syncToDb: no transport available — skipping sync.");
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+   const payload = {
+  to_wh:          fd.to_warehouse.value,
+  transportation: transport.value,
+  prod_arr:       products.map(toApiProdItem),
+  //  ...(fd.description?.trim() ? { description: fd.description.trim() } : {}),
+  description: fd.description || undefined,
+};
 
 
-      const draftExists = !!(overrideStockId ?? currentStockId);
-      if (!invoiceFile && !draftExists) {
-        toast("warning", "Invoice Required", "Please upload an invoice before saving.", 3000);
-        return;
-      }
+      console.log("syncToDb payload:", payload);
+      const res = await AuthService.stockFlowSync(payload);
 
-      const transport = fd.transport || transportOptions[0] || null;
-      if (!transport) { console.warn("syncToDb: no transport — skipping."); return; }
-
-      setIsSyncing(true);
-      try {
-        const payload = new FormData();
-        payload.append("to_wh", fd.to_warehouse.value);
-        payload.append("transportation", transport.value);
-        payload.append("prod_arr", JSON.stringify(products.map(toProdItem)));
-         if (invoiceFile) 
-        payload.append("stock_transfer_invoice", invoiceFile, invoiceFile.name);
-        if (fd.description) payload.append("description", fd.description);
-
-        await AuthService.stockFlowSync(payload);
-
-        const sid = overrideStockId ?? currentStockId;
-        if (!sid) {
-          try {
-            const draftRes = await AuthService.get_existing_stock_flow();
-            if (draftRes.data?.data?.stock_id) setCurrentStockId(draftRes.data.data.stock_id);
-          } catch (_) { /* ignore */ }
+ 
+      if (!currentStockId) {
+     
+        const draftRes = await AuthService.getExistingLot();
+        if (draftRes.data?.data?.stock_id) {
+          setCurrentStockId(draftRes.data.data.stock_id);
         }
-      } catch (err) {
-        const msg = err.response?.data?.message || "Failed to sync draft";
-        toast("error", "Sync Error", msg, 3000);
-      } finally {
-        setIsSyncing(false);
       }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentStockId, transportOptions, invoiceFile],
-  );
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // handleScan
-  // ─────────────────────────────────────────────────────────────────────────
-  const handleScan = useCallback(
-    async (partial_code) => {
-      const code = (partial_code || "").trim();
-      if (!code) return;
+      console.log("Sync success:", res.data?.message);
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to sync draft";
+      toast("error", "Sync Error", msg, 3000);
+      console.error("syncToDb error:", err.response?.data || err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [currentStockId, transportOptions]);
 
-      if (scannedProductsRef.current.find((p) => p.partial_code === code)) {
-        toast("warning", "Already Scanned", `Unique Code "${code}" is already in the list.`);
+  // ── handleScan ────────────────────────────────────────────────────────────
+  const handleScan = useCallback(async (barcode) => {
+    const code = (barcode || "").trim();
+    if (!code) return;
+
+    // Deduplicate by partial_code (barcode)
+    if (scannedProductsRef.current.find((p) => p.partial_code === code)) {
+      toast("warning", "Already Scanned", `Barcode "${code}" is already in the list.`);
+      setBarcodeInput("");
+      return;
+    }
+// 
+    setIsScanning(true);
+    try {
+      // const res     = await dispatch(scanProduct(code)).unwrap();
+      // const product = res.data;
+
+      const product = await dispatch(scanProduct(code)).unwrap();
+
+      if (!product?.prod_uuid) throw new Error("Product not found");
+
+      // The scan API must return at minimum: prod_uuid, partial_code, status,
+      // article_profile_name, warehouse_id (for validation), count (available).
+      if (!product?.prod_uuid) throw new Error(product.message || "Product not found");
+
+      // Validate product is from the user's own warehouse (server also checks this,
+      // but we surface it early for a better UX).
+      if (currentUser?.warehouse_id && product.warehouse_id !== currentUser.warehouse_id) {
+        MySwal.fire({
+          icon: "error",
+          title: "Wrong Warehouse",
+          text: `This product belongs to "${product.warehouse_name}", not your assigned warehouse.`,
+        });
         setBarcodeInput("");
         return;
       }
 
-      setIsScanning(true);
-      try {
-        const res = await dispatch(scanProduct(code)).unwrap();
-        const product = res;
-        if (!product?.prod_uuid) throw new Error(res.message || "Product not found");
-
-        if (currentUser?.warehouse_id && product.warehouse_id !== currentUser.warehouse_id) {
-          MySwal.fire({ icon: "error", title: "Wrong Warehouse", text: `This product belongs to "${product.warehouse_name}", not your assigned warehouse.` });
-          setBarcodeInput(""); return;
-        }
-
-        if (transferableStatuses.length && !transferableStatuses.includes(product.status)) {
-          MySwal.fire({ icon: "error", title: "Invalid Status", text: `"${product.title || code}" has status "${product.status}". Only ${transferableStatuses.join(", ")} can be transferred.` });
-          setBarcodeInput(""); return;
-        }
-
-        const newProd = {
-          prod_uuid: product.prod_uuid,
-          partial_code: product.partial_code || product.barcode || code,
-          article_profile_name: product.article_profile_name || "—",
-          warehouse_name: product.warehouse_name || "—",
-          count: product.count ?? 0,
-          status: product.status,
-          quantity_to_transfer: 1,
-          title: product.title || code,
-        };
-
-        const updated = [...scannedProductsRef.current, newProd];
-        setScanned(updated);
+      // Validate transferable status
+      if (!TRANSFERABLE_STATUSES.includes(product.status)) {
+        MySwal.fire({
+          icon: "error",
+          title: "Invalid Status",
+          text: `"${product.title || code}" has status "${product.status}". Only ${TRANSFERABLE_STATUSES.join(", ")} can be transferred.`,
+        });
         setBarcodeInput("");
-
-        if (canSync) {
-          await syncToDb(updated, formData);
-          toast("success", "Scanned & Saved", newProd.title);
-        } else {
-          toast("info", "Scanned (Local)", `"${newProd.title}" added. ${!invoiceFile ? "Upload invoice &" : "Select To Warehouse"} to save draft.`);
-        }
-      } catch (err) {
-        const msg = err.response?.data?.message || err.message || "Product not found";
-        MySwal.fire({ icon: "error", title: "Not Found", text: msg });
-      } finally {
-        setIsScanning(false);
-        barcodeRef.current?.focus();
+        return;
       }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dispatch, formData, canSync, syncToDb, currentUser, transferableStatuses, invoiceFile],
-  );
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Remove single product
-  // ─────────────────────────────────────────────────────────────────────────
-  const handleRemoveProduct = useCallback(
-    (prod_uuid, partial_code) => {
-      MySwal.fire({
-        title: "Remove Product?",
-        text: "This will remove it from your draft.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        confirmButtonText: "Remove",
-      }).then(async (result) => {
-        if (!result.isConfirmed) return;
+      const newProd = {
+        prod_uuid:            product.prod_uuid,
+        partial_code:         product.partial_code || product.barcode || code,
+        article_profile_id:   product.article_profile_id,
+        article_profile_name: product.article_profile_name,
+        warehouse_name:       product.warehouse_name || "—",
+        count:                product.count || 0,       // available in warehouse
+        status:               product.status,
+        quantity_to_transfer: 1,
+        // title:                product.title || code,    // display only
+      };
 
-        try {
-          if (currentStockId) {
-            const res = await AuthService.removeStockProduct(partial_code);
+      const updated = [...scannedProductsRef.current, newProd];
+      setScanned(updated);
+      setBarcodeInput("");
 
-            if (res.data?.draft_deleted) {
-              // Server deleted the whole draft row (last product was removed)
-              setScanned([]);
-              setCurrentStockId(null);
-              toast("info", "Draft Cleared", "Last product removed. Draft deleted.");
-            } else {
-              setScanned((prev) => prev.filter((p) => p.prod_uuid !== prod_uuid));
-              toast("success", "Removed", `"${partial_code}" removed.`);
-            }
+      if (canSync) {
+        await syncToDb(updated, formData);
+        toast("success", "Scanned & Saved", newProd.title);
+      } else {
+        toast("info", "Scanned (Local)", `"${newProd.title}" added. Select To Warehouse to save draft.`);
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Product not found";
+      MySwal.fire({ icon: "error", title: "Not Found", text: msg });
+    } finally {
+      setIsScanning(false);
+      barcodeRef.current?.focus();
+    }
+    // eslint-disable-next-line
+  }, [dispatch, formData, canSync, syncToDb, currentUser]);
+
+  // ── Remove single product ─────────────────────────────────────────────────
+  const handleRemoveProduct = useCallback((prod_uuid, partial_code) => {
+    MySwal.fire({
+      title: "Remove Product?",
+      text: "This will remove it from your draft.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      confirmButtonText: "Remove",
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      try {
+        if (currentStockId) {
+          // removeLotProduct expects the barcode / partial_code identifier
+          const res = await AuthService.removeLotProduct(partial_code);
+          setScanned((prev) => prev.filter((p) => p.prod_uuid !== prod_uuid));
+          if (res.data?.draft_deleted) {
+            setCurrentStockId(null);
+            toast("info", "Draft Cleared", "Last product removed. Draft deleted.");
           } else {
-            // No DB draft yet — local state only
-            setScanned((prev) => prev.filter((p) => p.prod_uuid !== prod_uuid));
             toast("success", "Removed", `"${partial_code}" removed.`);
           }
-        } catch (err) {
-          toast("error", "Error", err.response?.data?.message || "Failed to remove.", 3000);
-        }
-      });
-    },
-    [currentStockId],
-  );
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Remove all selected products
-  // ─────────────────────────────────────────────────────────────────────────
-  const handleRemoveSelected = useCallback(
-    (selectedUuids) => {
-      MySwal.fire({
-        title: `Remove ${selectedUuids.length} product(s)?`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        confirmButtonText: "Remove All",
-      }).then(async (result) => {
-        if (!result.isConfirmed) return;
-
-        const toRemove = scannedProducts.filter((p) => selectedUuids.includes(p.prod_uuid));
-
-        if (currentStockId) {
-          for (const p of toRemove) {
-            try {
-              const res = await AuthService.removeStockProduct(p.partial_code);
-              if (res.data?.draft_deleted) break; // server already deleted the whole draft
-            } catch {
-              /* best-effort — continue */
-            }
-          }
-        }
-
-        const remaining = scannedProducts.filter((p) => !selectedUuids.includes(p.prod_uuid));
-        setScanned(remaining);
-
-        if (remaining.length === 0) {
-          setCurrentStockId(null);
-          toast("info", "Draft Cleared", "All products removed. Draft deleted.");
         } else {
-          toast("success", "Removed", `${toRemove.length} product(s) removed.`);
+          setScanned((prev) => prev.filter((p) => p.prod_uuid !== prod_uuid));
+          toast("success", "Removed", `"${partial_code}" removed.`);
         }
-      });
-    },
-    [scannedProducts, currentStockId],
-  );
+      } catch (err) {
+        toast("error", "Error", err.response?.data?.message || "Failed to remove.", 3000);
+      }
+    });
+  }, [currentStockId]);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Discard entire draft
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Remove all selected ───────────────────────────────────────────────────
+  const handleRemoveSelected = useCallback((selectedUuids) => {
+    MySwal.fire({
+      title: `Remove ${selectedUuids.length} product(s)?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      confirmButtonText: "Remove All",
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      const toRemove = scannedProducts.filter((p) => selectedUuids.includes(p.prod_uuid));
+      if (currentStockId) {
+        for (const p of toRemove) {
+          try { await AuthService.removeLotProduct(p.partial_code); } catch { /* continue */ }
+        }
+      }
+      const remaining = scannedProducts.filter((p) => !selectedUuids.includes(p.prod_uuid));
+      setScanned(remaining);
+      if (remaining.length === 0) setCurrentStockId(null);
+      toast("success", "Removed", `${toRemove.length} product(s) removed.`);
+    });
+  }, [scannedProducts, currentStockId]);
+
+  // ── Discard entire draft ──────────────────────────────────────────────────
   const handleDiscardDraft = () => {
     MySwal.fire({
       title: "Discard entire draft?",
-      text: "All scanned products will be removed and the draft will be deleted.",
+      text: "All scanned products will be removed.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
       confirmButtonText: "Yes, discard",
     }).then(async (result) => {
       if (!result.isConfirmed) return;
-
       try {
-        if (currentStockId) {
-          await AuthService.discardDraft();
-        }
+        if (currentStockId) await AuthService.discardDraft();
         setScanned([]);
         setCurrentStockId(null);
-        setFormData(INITIAL_FORM);
-        clearInvoice();
         toast("info", "Draft Discarded", "All products cleared.");
       } catch (err) {
-        // 404 means draft was already gone — still safe to clear locally
-        if (err.response?.status === 404) {
-          setScanned([]);
-          setCurrentStockId(null);
-          setFormData(INITIAL_FORM);
-          clearInvoice();
-          toast("info", "Draft Discarded", "All products cleared.");
-        } else {
-          toast("error", "Error", err.response?.data?.message || "Failed to discard.", 3000);
-        }
+        toast("error", "Error", err.response?.data?.message || "Failed to discard.", 3000);
       }
     });
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Quantity change
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Quantity change ───────────────────────────────────────────────────────
   const handleQtyChange = useCallback((prod_uuid, newQty) => {
     setScanned((prev) =>
       prev.map((p) => {
         if (p.prod_uuid !== prod_uuid) return p;
-        const qty = parseInt(newQty) || 1;
+        const qty = parseInt(newQty) || 0;
         if (qty > p.count) {
           toast("warning", "Insufficient Stock", `Only ${p.count} units available.`);
-          return { ...p, quantity_to_transfer: p.count };
+          return p;
         }
         return { ...p, quantity_to_transfer: qty };
       }),
     );
   }, []);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Excel import
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Excel import ──────────────────────────────────────────────────────────
   const handleExcelImport = async () => {
     if (!excelFile) return;
     setImportingExcel(true);
     try {
       const fd = new FormData();
       fd.append("excel_file", excelFile);
-      if (formData.to_warehouse) fd.append("to_wh", formData.to_warehouse.value);
-      if (effectiveTransport) fd.append("transportation", effectiveTransport.value);
-      if (formData.description) fd.append("description", formData.description);
-      if (invoiceFile) fd.append("invoice", invoiceFile, invoiceFile.name);
+      if (formData.to_warehouse)  fd.append("to_wh",          formData.to_warehouse.value);
+      if (effectiveTransport)     fd.append("transportation",  effectiveTransport.value);
+      if (formData.description)   fd.append("description",     formData.description);
 
-      const res = await AuthService.importStockFlowFromExcel(fd);
+      const res  = await AuthService.importStockFlowFromExcel(fd);
       const data = res.data;
 
       if (data.data?.stock_id) setCurrentStockId(data.data.stock_id);
 
       if (!data.data?.draft_saved && data.data?.products?.length) {
         const localProds = data.data.products.map((p) => ({
-          prod_uuid: p.prod_uuid,
-          partial_code: p.partial_code || p.barcode,
+          prod_uuid:            p.prod_uuid,
+          partial_code:         p.partial_code || p.barcode,
+          article_profile_id: p.article_profile_id || "—",
           article_profile_name: p.article_profile_name || "—",
-          warehouse_name: p.warehouse_name || "—",
-          count: p.available ?? p.count ?? 1,
-          status: p.status,
-          quantity_to_transfer: p.count ?? 1,
-          title: p.title || p.partial_code || p.barcode,
+          warehouse_name:       p.warehouse_name || "—",
+          count:                p.count || 1,
+          status:               p.status,
+          quantity_to_transfer: p.count || 1,
+          // title:                p.title || p.partial_code || p.barcode,
         }));
         setScanned((prev) => {
           const existing = new Set(prev.map((x) => x.prod_uuid));
@@ -2935,62 +1652,88 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
         html: `
           <p>Added: <strong>${data.data?.added || 0}</strong></p>
           <p>Skipped: <strong>${data.data?.skipped || 0}</strong></p>
-          ${data.data?.errors > 0 ? `<p>Errors: <strong>${data.data.errors}</strong></p><ul class="text-start">${errorLines}</ul>` : ""}
-          ${!data.data?.draft_saved ? `<p class="text-warning mt-2 small">Select To Warehouse to persist draft.</p>` : ""}
+          ${data.data?.errors > 0
+            ? `<p>Errors: <strong>${data.data.errors}</strong></p><ul class="text-start">${errorLines}</ul>`
+            : ""}
+          ${!data.data?.draft_saved
+            ? `<p class="text-warning mt-2 small">Select To Warehouse to persist draft.</p>`
+            : ""}
         `,
       });
     } catch (err) {
-      MySwal.fire({ icon: "error", title: "Import Failed", text: err.response?.data?.message || "Import failed." });
+      MySwal.fire({
+        icon: "error",
+        title: "Import Failed",
+        text: err.response?.data?.message || "Import failed.",
+      });
     } finally {
       setImportingExcel(false);
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Submit
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Submit ────────────────────────────────────────────────────────────────
+  /**
+   * Submit flow:
+   *  1. Final sync so the DB draft is up-to-date.
+   *  2. POST /auth/stockFlowSubmit (no body — server reads draft by session user).
+   *  3. Server validates each product against live inventory, marks is_submitted=TRUE,
+   *     sets status='in-transit'.
+   *  4. On success: navigate to /stock-transfer.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setProductErrors([]);
 
-    if (!invoiceFile) {
-      setInvoiceError("Invoice is required before submitting.");
-      toast("warning", "Invoice Required", "Please upload an invoice document.");
-      return;
+    if (!scannedProducts.length) {
+      toast("warning", "No Products", "Scan at least one product."); return;
     }
-    if (!scannedProducts.length) { toast("warning", "No Products", "Scan at least one product."); return; }
-    if (!formData.to_warehouse) { toast("warning", "Missing", "To Warehouse is required."); return; }
-    if (!effectiveTransport) { toast("warning", "Missing", "No transport options available yet."); return; }
-    if (scannedProducts.some((p) => (parseInt(p.quantity_to_transfer) || 0) <= 0)) {
+    if (!formData.to_warehouse) {
+      toast("warning", "Missing", "To Warehouse is required."); return;
+    }
+    if (!effectiveTransport) {
+      toast("warning", "Missing", "No transport options available yet."); return;
+    }
+    if (scannedProducts.some((p) => p.quantity_to_transfer <= 0)) {
       toast("warning", "Invalid Qty", "All quantities must be greater than 0."); return;
     }
 
+    // Ensure the draft is up to date before submitting
     await syncToDb(scannedProducts, formData);
 
     setSubmitting(true);
     try {
-      const res = await AuthService.stockFlowSubmit();
+      // stockFlowSubmit sends no body — server reads draft by req.user.uuid
+      const res  = await AuthService.stockFlowSubmit();
       const body = res.data;
 
+      // Backend returns { success: false, data: mistake_prods, message }
+      // when some products have inventory issues.
       if (!body.success) {
+        // mistake_prods: [{ prod_uuid, status, count }]
         const errProds = body.data || [];
         if (errProds.length) {
+          // Map prod_uuid back to partial_code for display
           const errorList = errProds.map((ep) => {
             const local = scannedProducts.find((p) => p.prod_uuid === ep.prod_uuid);
             return {
-              prod_uuid: ep.prod_uuid,
+              prod_uuid:    ep.prod_uuid,
               partial_code: local?.partial_code || ep.prod_uuid,
-              title: local?.title || ep.prod_uuid,
-              errors: [`Requested ${ep.count} but insufficient stock or status mismatch (${ep.status})`],
+              title:        local?.title        || ep.prod_uuid,
+              errors:       [`Requested ${ep.count} but insufficient stock or status mismatch (${ep.status})`],
             };
           });
           setProductErrors(errorList);
-          MySwal.fire({ icon: "error", title: "Submission Failed", html: `<p>${body.message}</p><p class="text-muted small">Inconsistent products are highlighted below.</p>` });
+          MySwal.fire({
+            icon: "error",
+            title: "Submission Failed",
+            html: `<p>${body.message}</p><p class="text-muted small">Inconsistent products are highlighted below.</p>`,
+          });
           return;
         }
         throw new Error(body.message || "Submission failed.");
       }
 
+      // Success: body.success === true
       MySwal.fire({
         icon: "success",
         title: "Stock Flow Created!",
@@ -3007,17 +1750,16 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
       const msg = err.response?.data?.message || err.message || "Failed to create stock flow.";
       const errProds = err.response?.data?.data || [];
       if (errProds.length) {
-        setProductErrors(
-          errProds.map((ep) => {
-            const local = scannedProducts.find((p) => p.prod_uuid === ep.prod_uuid);
-            return {
-              prod_uuid: ep.prod_uuid,
-              partial_code: local?.partial_code || ep.prod_uuid,
-              title: local?.title || ep.prod_uuid,
-              errors: [`Count ${ep.count}, status ${ep.status} — inventory mismatch`],
-            };
-          }),
-        );
+        const errorList = errProds.map((ep) => {
+          const local = scannedProducts.find((p) => p.prod_uuid === ep.prod_uuid);
+          return {
+            prod_uuid:    ep.prod_uuid,
+            partial_code: local?.partial_code || ep.prod_uuid,
+            title:        local?.title        || ep.prod_uuid,
+            errors:       [`Count ${ep.count}, status ${ep.status} — inventory mismatch`],
+          };
+        });
+        setProductErrors(errorList);
       }
       MySwal.fire({ icon: "error", title: "Error", text: msg });
     } finally {
@@ -3025,63 +1767,96 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Table columns
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Table columns ─────────────────────────────────────────────────────────
   const columns = useMemo(() => {
-    const errorMap = Object.fromEntries(productErrors.map((e) => [e.prod_uuid, e.errors]));
+    // Build a lookup from prod_uuid → error messages
+    const errorMap = Object.fromEntries(
+      productErrors.map((e) => [e.prod_uuid, e.errors])
+    );
+
     return [
-      { title: "#", render: (_, __, i) => i + 1, width: "50px" },
       {
-        title: "Unique Code", dataIndex: "partial_code",
+        title: "#",
+        render: (_, __, i) => i + 1,
+        width: "50px",
+      },
+      {
+        title: "Barcode / Code",
+        dataIndex: "partial_code",
         render: (text, record) => (
           <span>
             <span className="badge badge-primary">{text}</span>
             {errorMap[record.prod_uuid] && (
               <div className="mt-1">
                 {errorMap[record.prod_uuid].map((err, i) => (
-                  <div key={i} className="text-danger small"><AlertTriangle size={12} className="me-1" />{err}</div>
+                  <div key={i} className="text-danger small">
+                    <AlertTriangle size={12} className="me-1" />{err}
+                  </div>
                 ))}
               </div>
             )}
           </span>
         ),
       },
-      { title: "Article Profile", dataIndex: "article_profile_name" },
-      { title: "Warehouse", dataIndex: "warehouse_name" },
       {
-        title: "Status", dataIndex: "status",
-        render: (t) => <span className={`badge ${statusBadgeMap[t] || "badge-secondary"}`}>{t?.toUpperCase() || "N/A"}</span>,
+        title: "Product Name",
+        dataIndex: "title",
       },
       {
-        title: "Available", dataIndex: "count",
-        render: (t) => <span className="badge badge-info">{t ?? "—"}</span>,
+        title: "Article Profile",
+        dataIndex: "article_profile_name",
       },
       {
-        title: "Transfer Qty", dataIndex: "quantity_to_transfer",
+        title: "Warehouse",
+        dataIndex: "warehouse_name",
+      },
+      {
+        title: "Status",
+        dataIndex: "status",
+        render: (t) => (
+          <span className={`badge ${STATUS_BADGE[t] || "badge-info"}`}>
+            {t?.toUpperCase() || "N/A"}
+          </span>
+        ),
+      },
+      {
+        title: "Available",
+        dataIndex: "count",
+        render: (t) => <span className="badge badge-info">{t}</span>,
+      },
+      {
+        title: "Transfer Qty",
+        dataIndex: "quantity_to_transfer",
         render: (text, record) => (
           <input
-            type="number" className="form-control form-control-sm" style={{ width: "80px" }}
-            value={text} min="1" max={record.count}
+            type="number"
+            className="form-control form-control-sm"
+            style={{ width: "80px" }}
+            value={text}
+            min="1"
+            max={record.count}
             onChange={(e) => handleQtyChange(record.prod_uuid, e.target.value)}
           />
         ),
       },
       {
-        title: "Action", width: "80px",
+        title: "Action",
+        width: "80px",
         render: (_, record) => (
-          <button type="button" className="btn btn-sm btn-danger"
-            onClick={() => handleRemoveProduct(record.prod_uuid, record.partial_code)} title="Remove">
+          <button
+            type="button"
+            className="btn btn-sm btn-danger"
+            onClick={() => handleRemoveProduct(record.prod_uuid, record.partial_code)}
+            title="Remove"
+          >
             <Trash2 size={14} />
           </button>
         ),
       },
     ];
-  }, [productErrors, statusBadgeMap, handleQtyChange, handleRemoveProduct]);
+  }, [productErrors, handleQtyChange, handleRemoveProduct]);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -3129,17 +1904,23 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
               <RefreshCw size={16} className="me-2" />
               <strong>Active Draft:</strong>
               <span className="ms-2 badge badge-warning">{currentStockId}</span>
-              {isSyncing && <span className="spinner-border spinner-border-sm ms-2 text-muted" />}
+              {isSyncing && (
+                <span className="spinner-border spinner-border-sm ms-2 text-muted" />
+              )}
             </div>
             {scannedProducts.length > 0 && (
-              <button type="button" className="btn btn-sm btn-outline-danger" onClick={handleDiscardDraft}>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger"
+                onClick={handleDiscardDraft}
+              >
                 <Trash2 size={14} className="me-1" />Discard Draft
               </button>
             )}
           </div>
         )}
 
-        {/* Product-level validation errors */}
+        {/* Product errors (returned from submit) */}
         {productErrors.length > 0 && (
           <div className="alert alert-danger mb-3">
             <h6 className="mb-2">
@@ -3148,7 +1929,10 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
             </h6>
             <ul className="mb-0">
               {productErrors.map((e, i) => (
-                <li key={i}><strong>{e.title || e.partial_code}</strong> ({e.partial_code}): {e.errors.join("; ")}</li>
+                <li key={i}>
+                  <strong>{e.title || e.partial_code}</strong> ({e.partial_code}):{" "}
+                  {e.errors.join("; ")}
+                </li>
               ))}
             </ul>
           </div>
@@ -3159,19 +1943,31 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
           <div className="card-body">
             <h5 className="mb-4">Stock Flow Details</h5>
 
+            {/* From Warehouse — read-only, sourced from session */}
             {currentUser?.warehouse_name && (
               <div className="row mb-3">
                 <div className="col-lg-6">
                   <label className="form-label">From Warehouse</label>
-                  <input type="text" className="form-control bg-light" value={currentUser.warehouse_name} readOnly disabled />
-                  <small className="text-muted">Your assigned warehouse (set by your account)</small>
+                  <input
+                    type="text"
+                    className="form-control bg-light"
+                    value={currentUser.warehouse_name}
+                    readOnly
+                    disabled
+                  />
+                  <small className="text-muted">
+                    Your assigned warehouse (set by your account)
+                  </small>
                 </div>
               </div>
             )}
 
             <div className="row mb-3">
+              {/* To Warehouse */}
               <div className="col-lg-6">
-                <label className="form-label">To Warehouse <span className="text-danger">*</span></label>
+                <label className="form-label">
+                  To Warehouse <span className="text-danger">*</span>
+                </label>
                 <Select
                   options={allWarehouses}
                   value={formData.to_warehouse}
@@ -3180,38 +1976,55 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
                   isClearable
                 />
               </div>
+
+              {/* Transport */}
               <div className="col-lg-6">
                 <label className="form-label">
                   Transport <span className="text-danger">*</span>
-                  {transportOptions.length === 0 && <span className="spinner-border spinner-border-sm ms-2" />}
+                  {transportOptions.length === 0 && (
+                    <span className="spinner-border spinner-border-sm ms-2" />
+                  )}
                 </label>
                 <Select
                   options={transportOptions}
                   value={formData.transport}
                   onChange={(opt) => setField("transport", opt)}
-                  placeholder={transportOptions.length === 0 ? "Loading…" : "Select transport method"}
+                  placeholder={
+                    transportOptions.length === 0 ? "Loading…" : "Select transport method"
+                  }
                   isLoading={transportOptions.length === 0}
                 />
                 {transportOptions.length > 0 && !formData.transport && (
-                  <small className="text-muted">Defaults to <strong>{transportOptions[0]?.label}</strong> if not selected</small>
+                  <small className="text-muted">
+                    Defaults to <strong>{transportOptions[0]?.label}</strong> if not selected
+                  </small>
                 )}
               </div>
             </div>
 
             <div className="row mb-3">
+              {/* Description */}
               <div className="col-lg-6">
                 <label className="form-label">Description</label>
                 <textarea
-                  className="form-control" value={formData.description}
+                  className="form-control"
+                  value={formData.description || ""}
                   onChange={(e) => setField("description", e.target.value)}
-                  rows="2" placeholder="Notes about this transfer…"
+                  rows="2"
+                  placeholder="Notes about this transfer…"
                 />
               </div>
+
+              {/* Total Qty — auto-calculated */}
               <div className="col-lg-6">
                 <label className="form-label">Total Quantity</label>
                 <input
-                  type="number" className="form-control bg-light" value={totalQty}
-                  readOnly disabled style={{ fontWeight: "bold", fontSize: "1.1rem" }}
+                  type="number"
+                  className="form-control bg-light"
+                  value={totalQty}
+                  readOnly
+                  disabled
+                  style={{ fontWeight: "bold", fontSize: "1.1rem" }}
                 />
                 <small className="text-muted">Auto-calculated from scanned products</small>
               </div>
@@ -3219,135 +2032,32 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
           </div>
         </div>
 
-        {/* ── Invoice Upload (Required) ── */}
-        <div className="card mb-3">
-          <div className="card-body">
-            <div className="d-flex align-items-center mb-3">
-              <FileText size={22} className="text-danger me-2" />
-              <h5 className="mb-0">Invoice / Bill</h5>
-              <span className="badge badge-danger ms-2" style={{ fontSize: "0.7rem" }}>Required</span>
-            </div>
-
-            <p className="text-muted small mb-3">
-              Upload the invoice or bill document for this stock transfer.
-              Accepted formats: <strong>JPG, PNG, WEBP, PDF</strong> (max {MAX_INVOICE_SIZE_MB} MB).
-              The invoice is mandatory and will be attached to the stock flow record.
-            </p>
-
-            {!invoiceFile && (
-              <div
-                className={`border-2 rounded p-4 text-center ${invoiceError ? "border-danger" : "border-dashed"}`}
-                style={{
-                  border: `2px dashed ${invoiceError ? "#dc3545" : "#ced4da"}`,
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  background: invoiceError ? "rgba(220,53,69,.04)" : "#fafafa",
-                  transition: "border-color .2s",
-                }}
-                onClick={() => invoiceInputRef.current?.click()}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleInvoiceDrop}
-              >
-                <Upload size={36} className={`mb-2 ${invoiceError ? "text-danger" : "text-muted"}`} />
-                <p className={`mb-1 fw-semibold ${invoiceError ? "text-danger" : ""}`}>
-                  Drag &amp; drop your invoice here, or{" "}
-                  <span className="text-primary" style={{ textDecoration: "underline" }}>browse</span>
-                </p>
-                <small className="text-muted">JPG · PNG · WEBP · PDF · Max {MAX_INVOICE_SIZE_MB} MB</small>
-              </div>
-            )}
-
-            <input
-              ref={invoiceInputRef}
-              type="file"
-              className="d-none"
-              accept=".jpg,.jpeg,.png,.webp,.pdf"
-              onChange={(e) => handleInvoiceChange(e.target.files?.[0] || null)}
-            />
-
-            {invoiceError && (
-              <div className="text-danger small mt-2 d-flex align-items-center">
-                <AlertTriangle size={13} className="me-1" />{invoiceError}
-              </div>
-            )}
-
-            {invoiceFile && (
-              <div
-                className="border rounded p-3 d-flex align-items-start gap-3"
-                style={{ background: "#f8f9fa", borderRadius: "8px" }}
-              >
-                <div
-                  className="flex-shrink-0 d-flex align-items-center justify-content-center rounded overflow-hidden"
-                  style={{ width: "72px", height: "72px", background: "#e9ecef", border: "1px solid #dee2e6" }}
-                >
-                  {invoicePreview === "pdf" ? (
-                    <FileText size={32} className="text-danger" />
-                  ) : (
-                    <img src={invoicePreview} alt="Invoice preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  )}
-                </div>
-{/*   */}
-                <div className="flex-grow-1 min-w-0">
-                  <div className="d-flex align-items-center justify-content-between">
-                    <strong className="d-block text-truncate" style={{ maxWidth: "280px" }} title={invoiceFile.name}>
-                      {invoiceFile.name}
-                    </strong>
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-danger ms-2 flex-shrink-0"
-                      onClick={clearInvoice}
-                      title="Remove invoice"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                  <small className="text-muted">
-                    {(invoiceFile.size / 1024).toFixed(1)} KB &nbsp;·&nbsp;
-                    {invoiceFile.type === "application/pdf" ? "PDF Document" : "Image"}
-                  </small>
-                  <div className="mt-1">
-                    <span className="badge badge-success">✓ Invoice ready</span>
-                    {!canSync && (
-                      <span className="badge badge-warning ms-2">Select To Warehouse to sync</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!invoiceFile && !invoiceError && (
-              <div className="alert alert-warning d-flex align-items-center mt-3 mb-0 py-2">
-                <AlertTriangle size={15} className="me-2 flex-shrink-0" />
-                <small>Invoice must be uploaded before the draft can be saved or submitted.</small>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Scan Barcode ── */}
+        {/* ── Scan Barcode — always active ── */}
         <div className="card mb-3">
           <div className="card-body">
             <div className="d-flex align-items-center mb-3">
               <Camera size={22} className="text-primary me-2" />
               <h5 className="mb-0">Scan Barcode</h5>
-              <span className="badge badge-success ms-2" style={{ fontSize: "0.7rem" }}>Always Active</span>
+              <span className="badge badge-success ms-2" style={{ fontSize: "0.7rem" }}>
+                Always Active
+              </span>
             </div>
 
             {!canSync ? (
               <div className="alert alert-info d-flex align-items-center mb-3">
+                <span className="me-2 flex-shrink-0">ℹ</span>
                 <div>
-                  <strong>Scanning is available now.</strong>
-                  <ul className="mb-0 mt-1 small text-muted ps-3">
-                    {!invoiceFile && <li>Upload an <strong>invoice</strong> above.</li>}
-                    {!formData.to_warehouse && <li>Select a <strong>To Warehouse</strong> above.</li>}
-                  </ul>
+                  <strong>Scanning is available now.</strong> Products will be held locally.
+                  <span className="d-block mt-1 text-muted small">
+                    Select a <strong>To Warehouse</strong> above to auto-save each scan to draft.
+                  </span>
                 </div>
               </div>
             ) : (
               <div className="alert alert-success d-flex align-items-center mb-3">
                 <span className="me-2 flex-shrink-0">✓</span>
                 <div>
-                  <strong>Ready to scan &amp; auto-save!</strong> Each scan is immediately saved to draft.
+                  <strong>Ready to scan &amp; auto-save!</strong> Each scan is saved to draft.
                   <div className="mt-1">
                     To: <strong>{formData.to_warehouse?.label}</strong>
                     {!formData.transport && effectiveTransport && (
@@ -3364,7 +2074,9 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
               <div className="col-lg-8">
                 <label className="form-label">
                   Scan or Enter Barcode
-                  {(isScanning || isSyncing) && <span className="spinner-border spinner-border-sm ms-2" />}
+                  {(isScanning || isSyncing) && (
+                    <span className="spinner-border spinner-border-sm ms-2" />
+                  )}
                 </label>
                 <input
                   ref={barcodeRef}
@@ -3372,7 +2084,9 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
                   className="form-control"
                   value={barcodeInput}
                   onChange={(e) => setBarcodeInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleScan(barcodeInput); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); handleScan(barcodeInput); }
+                  }}
                   placeholder="Use scanner or type barcode then press Enter"
                   disabled={isScanning}
                   autoFocus
@@ -3380,13 +2094,16 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
               </div>
               <div className="col-lg-4">
                 <button
-                  type="button" className="btn btn-primary w-100"
+                  type="button"
+                  className="btn btn-primary w-100"
                   onClick={() => handleScan(barcodeInput)}
                   disabled={!barcodeInput.trim() || isScanning}
                 >
-                  {isScanning
-                    ? <><span className="spinner-border spinner-border-sm me-2" />Scanning…</>
-                    : <><Plus size={16} className="me-1" />Add Product</>}
+                  {isScanning ? (
+                    <><span className="spinner-border spinner-border-sm me-2" />Scanning…</>
+                  ) : (
+                    <><Plus size={16} className="me-1" />Add Product</>
+                  )}
                 </button>
               </div>
             </div>
@@ -3396,10 +2113,12 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
                 <Package size={18} className="me-2" />
                 <strong>
                   {scannedProducts.length} product(s) &nbsp;|&nbsp; Total Qty: {totalQty}
-                  {isSyncing && <span className="ms-2 text-muted small">saving…</span>}
+                  {isSyncing && (
+                    <span className="ms-2 text-muted small">saving…</span>
+                  )}
                   {!canSync && (
                     <span className="ms-2 text-warning small">
-                      ⚠ Unsaved — {!invoiceFile ? "upload invoice &" : ""} select To Warehouse to persist
+                      ⚠ Unsaved — select To Warehouse to persist
                     </span>
                   )}
                 </strong>
@@ -3408,64 +2127,98 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
           </div>
         </div>
 
-        {/* ── Excel Import ── */}
+        {/* ── Excel Import — always active ── */}
         <div className="card mb-3">
           <div className="card-body">
             <div className="d-flex align-items-center mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                style={{ color: "#198754" }} className="me-2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                <line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" />
-                <line x1="9" y1="3" x2="9" y2="21" /><line x1="15" y1="3" x2="15" y2="21" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="22" height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ color: "#198754" }}
+                className="me-2"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="3"  y1="9"  x2="21" y2="9"/>
+                <line x1="3"  y1="15" x2="21" y2="15"/>
+                <line x1="9"  y1="3"  x2="9"  y2="21"/>
+                <line x1="15" y1="3"  x2="15" y2="21"/>
               </svg>
               <h5 className="mb-0">Import from Excel / CSV</h5>
-              <span className="badge badge-success ms-2" style={{ fontSize: "0.7rem" }}>Always Active</span>
+              <span className="badge badge-success ms-2" style={{ fontSize: "0.7rem" }}>
+                Always Active
+              </span>
             </div>
 
             <p className="text-muted small mb-3">
-              Upload a file with a <code>Unique Code</code> & <code>Quantity</code>.
-             
+              Upload a file with a <code>barcode</code> column (optional:{" "}
+              <code>quantity_to_transfer</code> or <code>count</code>). Products are validated
+              immediately. If <strong>To Warehouse</strong> is selected, the draft is saved
+              automatically.
             </p>
 
             <div className="row align-items-end">
               <div className="col-lg-8">
                 <label className="form-label">Select Excel / CSV File</label>
                 <input
-                  ref={excelInputRef} type="file" className="form-control"
+                  ref={excelInputRef}
+                  type="file"
+                  className="form-control"
                   accept=".xlsx,.xls,.csv"
                   onChange={(e) => setExcelFile(e.target.files[0] || null)}
                 />
                 {excelFile && (
-                  <small className="text-muted">Selected: {excelFile.name} ({(excelFile.size / 1024).toFixed(1)} KB)</small>
+                  <small className="text-muted">
+                    Selected: {excelFile.name} ({(excelFile.size / 1024).toFixed(1)} KB)
+                  </small>
                 )}
               </div>
               <div className="col-lg-4">
                 <button
-                  type="button" className="btn btn-success w-100"
+                  type="button"
+                  className="btn btn-success w-100"
                   onClick={handleExcelImport}
                   disabled={!excelFile || importingExcel}
                 >
-                  {importingExcel
-                    ? <><span className="spinner-border spinner-border-sm me-2" />Importing…</>
-                    : <><Upload size={16} className="me-1" />Import Excel</>}
+                  {importingExcel ? (
+                    <><span className="spinner-border spinner-border-sm me-2" />Importing…</>
+                  ) : (
+                    <><Upload size={16} className="me-1" />Import Excel</>
+                  )}
                 </button>
               </div>
             </div>
 
+            {/* CSV template download */}
             <div className="mt-2">
               <small className="text-muted">
                 Need a template?{" "}
-                <a href="#" onClick={(e) => {
-                  e.preventDefault();
-                  const csv = "data:text/csv;charset=utf-8," +
-                    [["barcode", "quantity_to_transfer"], ["BARCODE001", 1], ["BARCODE002", 2]]
-                      .map((r) => r.join(",")).join("\n");
-                  const link = document.createElement("a");
-                  link.setAttribute("href", encodeURI(csv));
-                  link.setAttribute("download", "stock_flow_template.csv");
-                  link.click();
-                }}>Download CSV template</a>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const csv =
+                      "data:text/csv;charset=utf-8," +
+                      [
+                        ["barcode", "quantity_to_transfer"],
+                        ["BARCODE001", 1],
+                        ["BARCODE002", 2],
+                      ]
+                        .map((r) => r.join(","))
+                        .join("\n");
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodeURI(csv));
+                    link.setAttribute("download", "stock_flow_template.csv");
+                    link.click();
+                  }}
+                >
+                  Download CSV template
+                </a>
               </small>
             </div>
           </div>
@@ -3476,9 +2229,15 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
           <div className="card mb-3">
             <div className="card-body">
               <div className="d-flex align-items-center justify-content-between mb-3">
-                <h5 className="mb-0"><Package size={18} className="me-2" />Scanned Products ({scannedProducts.length})</h5>
-                <button type="button" className="btn btn-sm btn-outline-danger"
-                  onClick={() => handleRemoveSelected(scannedProducts.map((p) => p.prod_uuid))}>
+                <h5 className="mb-0">
+                  <Package size={18} className="me-2" />
+                  Scanned Products ({scannedProducts.length})
+                </h5>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => handleRemoveSelected(scannedProducts.map((p) => p.prod_uuid))}
+                >
                   <Trash2 size={14} className="me-1" />Remove All
                 </button>
               </div>
@@ -3496,45 +2255,52 @@ const canSync = !!(formData.to_warehouse && effectiveTransport && (invoiceFile |
             <ul className="mb-0 mt-2">
               <li>Total Products: {scannedProducts.length}</li>
               <li>Total Quantity: {totalQty} units</li>
-              {currentUser?.warehouse_name && <li>From: {currentUser.warehouse_name}</li>}
-              {formData.to_warehouse && <li>To: {formData.to_warehouse.label}</li>}
-              {effectiveTransport && <li>Transport: {effectiveTransport.label}{!formData.transport ? " (default)" : ""}</li>}
-              <li>Invoice: {invoiceFile ? <strong className="text-success">{invoiceFile.name}</strong> : <span className="text-danger">Not uploaded</span>}</li>
-              <li>Status after submit: <strong>in-transit</strong></li>
-              {currentStockId && <li>Draft Stock ID: <strong>{currentStockId}</strong></li>}
+              {currentUser?.warehouse_name && (
+                <li>From: {currentUser.warehouse_name}</li>
+              )}
+              {formData.to_warehouse && (
+                <li>To: {formData.to_warehouse.label}</li>
+              )}
+              {effectiveTransport && (
+                <li>
+                  Transport: {effectiveTransport.label}
+                  {!formData.transport ? " (default)" : ""}
+                </li>
+              )}
+              {/* Status is always 'approved' on draft; 'in-transit' after submit */}
+              <li>
+                Status after submit: <strong>in-transit</strong>
+              </li>
+              {currentStockId && (
+                <li>
+                  Draft Stock ID: <strong>{currentStockId}</strong>
+                </li>
+              )}
             </ul>
-            <small className="text-muted d-block mt-1">Inventory will be updated on submission.</small>
+            <small className="text-muted d-block mt-1">
+              Inventory will be updated on submission.
+            </small>
           </div>
         )}
 
         {/* ── Submit / Cancel ── */}
         <div className="col-lg-12">
           <div className="btn-addproduct mb-4">
-            <Link to="/stock-transfer" className="btn btn-cancel me-2">Cancel</Link>
-            <OverlayTrigger
-              placement="top"
-              overlay={
-                !invoiceFile
-                  ? <Tooltip>Upload an invoice before submitting</Tooltip>
-                  : !formData.to_warehouse
-                    ? <Tooltip>Select a destination warehouse</Tooltip>
-                    : <span />
-              }
+            <Link to="/stock-transfer" className="btn btn-cancel me-2">
+              Cancel
+            </Link>
+            <button
+              type="button"
+              className="btn btn-submit"
+              onClick={handleSubmit}
+              disabled={submitting || scannedProducts.length === 0 || !canSync}
             >
-              <span>
-                <button
-                  type="button"
-                  className="btn btn-submit"
-                  onClick={handleSubmit}
-                  disabled={submitting || scannedProducts.length === 0 || !canSubmit}
-                  style={!canSubmit ? { pointerEvents: "none" } : {}}
-                >
-                  {submitting
-                    ? <><span className="spinner-border spinner-border-sm me-2" />Submitting…</>
-                    : <><Send size={16} className="me-1" />Create Stock Flow</>}
-                </button>
-              </span>
-            </OverlayTrigger>
+              {submitting ? (
+                <><span className="spinner-border spinner-border-sm me-2" />Submitting…</>
+              ) : (
+                <><Send size={16} className="me-1" />Create Stock Flow</>
+              )}
+            </button>
           </div>
         </div>
 
