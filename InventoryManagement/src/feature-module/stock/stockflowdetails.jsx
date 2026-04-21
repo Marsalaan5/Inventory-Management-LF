@@ -447,9 +447,7 @@
 // export default StockFlowDetails;
 
 
-
-
-
+import PropTypes from "prop-types";
 import React, { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -469,7 +467,7 @@ import {
 } from "feather-icons-react/build/IconComponents";
 import AuthService from "../../services/authService";
 import Table from "../../core/pagination/datatable";
-import PropTypes from "prop-types";
+
 
 const MySwal = withReactContent(Swal);
 
@@ -915,7 +913,7 @@ const StockFlowDetails = () => {
   );
 };
 
-StockFlowDetails.propTypes = {
+StatusIcon.propTypes = {
   status: PropTypes.string,
 };
 
