@@ -16,11 +16,11 @@ jobs:
 
       - name: Install Frontend
         run: npm ci
-        working-directory: InventoryManagment
+        working-directory: InventoryManagement
 
       - name: Build Frontend
         run: npm run build
-        working-directory: InventoryManagment
+        working-directory: InventoryManagement
 
   backend:
     runs-on: ubuntu-latest
@@ -32,8 +32,8 @@ jobs:
 
       - name: Install Backend
         run: npm ci
-        working-directory: inventoy-backend
+        working-directory: inventory-backend
 
       - name: Test Backend
         run: npm test
-        working-directory: inventoy-backend
+        working-directory: inventory-backend
