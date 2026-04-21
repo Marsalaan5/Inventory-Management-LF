@@ -26,10 +26,16 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: inventoy-backend
+        working-directory: inventory-backend
 
     steps:
       - uses: actions/checkout@v4
+
+      - run: pwd
+      - run: ls -la
+      - run: ls InventoryManagment || true
+      - run: ls inventoy-backend || true
+      
       - uses: actions/setup-node@v4
         with:
           node-version: 18
