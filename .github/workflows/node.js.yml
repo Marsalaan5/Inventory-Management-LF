@@ -15,7 +15,7 @@ jobs:
           node-version: 22
 
       - name: Install Frontend
-        run: npm ci
+        run: npm ci --no-cache
         working-directory: InventoryManagement
 
       - name: Build Frontend
