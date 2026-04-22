@@ -1,11 +1,29 @@
 
 // src/feature-module/settings/menu/MenuManagement.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useMemo,useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { Plus, Edit2, Trash2, Eye, EyeOff, GripVertical, ChevronDown, ChevronRight } from 'lucide-react';
 import AuthService from '../../services/authService';
 import { fetchMenu } from '../../core/redux/slices/menuSlice';
 import { usePermissions } from '../../hooks/usePermission';
+
+const flattenMenu = (items, result = []) => {
+  items.forEach(item => {
+    const flatItem = { ...item };
+    const children = flatItem.submenuItems || flatItem.children || [];
+
+    delete flatItem.submenuItems;
+    delete flatItem.children;
+
+    result.push(flatItem);
+
+    if (children.length > 0) {
+      flattenMenu(children, result);
+    }
+  });
+
+  return result;
+};
 
 const MenuManagement = () => {
   const dispatch = useDispatch();
@@ -43,123 +61,187 @@ const MenuManagement = () => {
     'Monitor', 'Hexagon', 'Edit', 'Columns', 'Map', 'Send', 'AlertTriangle'
   ];
 
+  // useEffect(() => {
+  //   fetchMenuItems();
+  //   fetchAvailableRoles();
+  // },[]);
+
+
   useEffect(() => {
-    fetchMenuItems();
-    fetchAvailableRoles();
-  },[]);
+  fetchMenuItems();
+  fetchAvailableRoles();
+}, [fetchMenuItems, fetchAvailableRoles]);
 
+  // const fetchMenuItems = async () => {
+  //   try {
+  //     setLoading(true);
+  //     // console.log(' Fetching ALL menu items from /menu/all...');
+      
+  //     const response = await AuthService.getAllMenuItems();
+  //     // console.log('📋 Response from getAllMenuItems:', response);
+      
+  //     // let rawData = response.data || response;
 
-  const fetchMenuItems = async () => {
-    try {
-      setLoading(true);
-      // console.log(' Fetching ALL menu items from /menu/all...');
+  //     const rawData = Array.isArray(response?.data)
+  // ? response.data
+  // : Array.isArray(response)
+  // ? response
+  // : [];
+
+  //     // console.log(' Raw data type:', Array.isArray(rawData) ? 'Array' : typeof rawData);
+  //     // console.log(' Raw data length:', Array.isArray(rawData) ? rawData.length : 'N/A');
       
-      const response = await AuthService.getAllMenuItems();
-      // console.log('📋 Response from getAllMenuItems:', response);
+  //     // The /menu/all endpoint returns a FLAT array, not hierarchical
+  //     let flatData = [];
       
-      let rawData = response.data || response;
-      // console.log(' Raw data type:', Array.isArray(rawData) ? 'Array' : typeof rawData);
-      // console.log(' Raw data length:', Array.isArray(rawData) ? rawData.length : 'N/A');
-      
-      // The /menu/all endpoint returns a FLAT array, not hierarchical
-      let flatData = [];
-      
-      if (Array.isArray(rawData)) {
-        // Check if data might be nested (shouldn't be from /menu/all, but just in case)
-        const hasNesting = rawData.some(item => 
-          (item.submenuItems && item.submenuItems.length > 0) || 
-          (item.children && item.children.length > 0)
-        );
+  //     if (Array.isArray(rawData)) {
+  //       // Check if data might be nested (shouldn't be from /menu/all, but just in case)
+  //       const hasNesting = rawData.some(item => 
+  //         (item.submenuItems && item.submenuItems.length > 0) || 
+  //         (item.children && item.children.length > 0)
+  //       );
         
-        if (hasNesting) {
-          console.warn(' Unexpected: /menu/all returned nested data. Flattening...');
-          flatData = flattenMenu(rawData);
-        } else {
-          // console.log('Data is already flat as expected');
-          flatData = rawData;
-        }
-      } else {
-        console.error('Unexpected response format:', rawData);
-        flatData = [];
-      }
+  //       if (hasNesting) {
+  //         console.warn(' Unexpected: /menu/all returned nested data. Flattening...');
+  //         flatData = flattenMenu(rawData);
+  //       } else {
+  //         // console.log('Data is already flat as expected');
+  //         flatData = rawData;
+  //       }
+  //     } else {
+  //       console.error('Unexpected response format:', rawData);
+  //       flatData = [];
+  //     }
       
-      // console.log('Total items:', flatData.length);
-      // console.log('Active items:', flatData.filter(i => i.status === 'active').length);
-      // console.log('Inactive items:', flatData.filter(i => i.status === 'inactive').length);
+  //     // console.log('Total items:', flatData.length);
+  //     // console.log('Active items:', flatData.filter(i => i.status === 'active').length);
+  //     // console.log('Inactive items:', flatData.filter(i => i.status === 'inactive').length);
       
-      // Normalize roles
-      const normalizedData = flatData.map(item => ({
-        ...item,
-        roles: normalizeRoles(item.roles)
-      }));
+  //     // Normalize roles
+  //     const normalizedData = flatData.map(item => ({
+  //       ...item,
+  //       roles: normalizeRoles(item.roles)
+  //     }));
       
-      // console.log(' Setting menu items:', normalizedData.length);
-      setMenuItems(normalizedData);
-    } catch (error) {
-      console.error(' Error fetching menu items:', error);
-      console.error('Error details:', error.response?.data);
-      alert('Failed to fetch menu items: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     // console.log(' Setting menu items:', normalizedData.length);
+  //     setMenuItems(normalizedData);
+  //   } catch (error) {
+  //     console.error(' Error fetching menu items:', error);
+  //     console.error('Error details:', error.response?.data);
+  //     alert('Failed to fetch menu items: ' + (error.response?.data?.message || error.message));
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  // Helper to flatten hierarchical menu (shouldn't be needed for /menu/all)
-  const flattenMenu = (items, result = []) => {
-    items.forEach(item => {
-      const flatItem = { ...item };
-      const children = flatItem.submenuItems || flatItem.children || [];
-      delete flatItem.submenuItems;
-      delete flatItem.children;
-      result.push(flatItem);
-      if (children.length > 0) {
-        flattenMenu(children, result);
-      }
-    });
-    return result;
-  };
+  const fetchMenuItems = useCallback(async () => {
+  try {
+    setLoading(true);
+    const response = await AuthService.getAllMenuItems();
 
-  const fetchAvailableRoles = async () => {
-    try {
-      setRolesLoading(true);
-      const response = await AuthService.getRoles();
-      
-      let rolesArray = [];
-      let rawData = response.data || response;
-      
-      if (Array.isArray(rawData)) {
-        rolesArray = rawData.map(role => {
-          if (typeof role === 'string') return role;
-          if (typeof role === 'object' && role !== null) {
-            return role.name || role.role_name || role.roleName || role.title || role.role || null;
-          }
-          return null;
-        });
-      } else if (rawData?.roles && Array.isArray(rawData.roles)) {
-        rolesArray = rawData.roles.map(role => {
-          if (typeof role === 'string') return role;
-          if (typeof role === 'object' && role !== null) {
-            return role.name || role.role_name || role.roleName || role.title || role.role || null;
-          }
-          return null;
-        });
-      }
-      
-      rolesArray = [...new Set(rolesArray.filter(Boolean))];
-      
-      if (rolesArray.length === 0) {
-        console.warn('No roles found, using fallback');
-        setAvailableRoles(['super admin', 'admin', 'user']);
-      } else {
-        setAvailableRoles(rolesArray);
-      }
-    } catch (error) {
-      console.error('Error fetching roles:', error);
-      setAvailableRoles(['super admin', 'admin', 'user']);
-    } finally {
-      setRolesLoading(false);
+    const rawData = Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(response)
+      ? response
+      : [];
+
+    let flatData = [];
+
+    if (Array.isArray(rawData)) {
+      const hasNesting = rawData.some(item => 
+        (item.submenuItems && item.submenuItems.length > 0) || 
+        (item.children && item.children.length > 0)
+      );
+
+      flatData = hasNesting ? flattenMenu(rawData) : rawData;
     }
-  };
+
+    const normalizedData = flatData.map(item => ({
+      ...item,
+      roles: normalizeRoles(item.roles)
+    }));
+
+    setMenuItems(normalizedData);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+}, []);
+  
+  
+
+
+    // const fetchAvailableRoles = async () => {
+    //   try {
+    //     setRolesLoading(true);
+    //     const response = await AuthService.getRoles();
+        
+    //     let rolesArray = [];
+    //     let rawData = response.data || response;
+        
+    //     if (Array.isArray(rawData)) {
+    //       rolesArray = rawData.map(role => {
+    //         if (typeof role === 'string') return role;
+    //         if (typeof role === 'object' && role !== null) {
+    //           return role.name || role.role_name || role.roleName || role.title || role.role || null;
+    //         }
+    //         return null;
+    //       });
+    //     } else if (rawData?.roles && Array.isArray(rawData.roles)) {
+    //       rolesArray = rawData.roles.map(role => {
+    //         if (typeof role === 'string') return role;
+    //         if (typeof role === 'object' && role !== null) {
+    //           return role.name || role.role_name || role.roleName || role.title || role.role || null;
+    //         }
+    //         return null;
+    //       });
+    //     }
+        
+    //     rolesArray = [...new Set(rolesArray.filter(Boolean))];
+        
+    //     if (rolesArray.length === 0) {
+    //       console.warn('No roles found, using fallback');
+    //       setAvailableRoles(['super admin', 'admin', 'user']);
+    //     } else {
+    //       setAvailableRoles(rolesArray);
+    //     }
+    //   } catch (error) {
+    //     console.error('Error fetching roles:', error);
+    //     setAvailableRoles(['super admin', 'admin', 'user']);
+    //   } finally {
+    //     setRolesLoading(false);
+    //   }
+    // };
+
+
+  const fetchAvailableRoles = useCallback(async () => {
+  try {
+    setRolesLoading(true);
+    const response = await AuthService.getRoles();
+
+    let rolesArray = [];
+    let rawData = response.data || response;
+
+    if (Array.isArray(rawData)) {
+      rolesArray = rawData.map(role =>
+        typeof role === 'string'
+          ? role
+          : role?.name || role?.role_name || role?.roleName || role?.title || role?.role
+      );
+    }
+
+    rolesArray = [...new Set(rolesArray.filter(Boolean))];
+
+    setAvailableRoles(
+      rolesArray.length ? rolesArray : ['super admin', 'admin', 'user']
+    );
+  } catch (error) {
+    setAvailableRoles(['super admin', 'admin', 'user']);
+  } finally {
+    setRolesLoading(false);
+  }
+}, []);
 
   const normalizeRoles = (roles) => {
     if (!roles) return [];
@@ -411,7 +493,7 @@ const MenuManagement = () => {
     });
   };
 
-  const hierarchicalMenu = organizeMenuHierarchy(menuItems);
+  const hierarchicalMenu = useMemo(() => organizeMenuHierarchy(menuItems), [menuItems]);
   const parentMenuItems = menuItems.filter(item => item.parent_id === null || !item.path);
 
   return (

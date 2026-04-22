@@ -740,19 +740,40 @@ const WareHouses = () => {
   const [editingId, setEditingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  // useEffect(() => {
-  //   handleRefresh();
-  //   // fetchUsers();
-  //   fetchAllUsers();
-  // }, [handleRefresh,fetchAllUsers]);
+
+
+  const fetchAllUsers = useCallback(async () => {
+  try {
+    const response = await AuthService.getAllUsers();
+    setUsers(response.data.data || []);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+  }
+}, []);
+
+const handleRefresh = useCallback(() => {
+  const params = {};
+
+  if (searchTerm) params.searchTerm = searchTerm;
+  if (sortBy) params.sortBy = sortBy.value;
+
+  dispatch(fetchWarehouses(params));
+}, [searchTerm, sortBy, dispatch]);
+
 
   useEffect(() => {
-  handleRefresh();
-}, [handleRefresh]);
+    handleRefresh();
+    // fetchUsers();
+    fetchAllUsers();
+  }, [handleRefresh,fetchAllUsers]);
 
-useEffect(() => {
-  fetchAllUsers();
-}, [fetchAllUsers]);
+//   useEffect(() => {
+//   handleRefresh();
+// }, []);
+
+// useEffect(() => {
+//   fetchAllUsers();
+// }, []);
 
   // Show error notifications
   useEffect(() => {
@@ -789,23 +810,6 @@ useEffect(() => {
   //   }
   // };
 
-const fetchAllUsers = useCallback(async () => {
-  try {
-    const response = await AuthService.getAllUsers();
-    setUsers(response.data.data || []);
-  } catch (error) {
-    console.error("Error fetching users:", error);
-  }
-}, []);
-
-const handleRefresh = useCallback(() => {
-  const params = {};
-
-  if (searchTerm) params.searchTerm = searchTerm;
-  if (sortBy) params.sortBy = sortBy.value;
-
-  dispatch(fetchWarehouses(params));
-}, [searchTerm, sortBy, dispatch]);
 
   const handleSearch = () => {
     handleRefresh();

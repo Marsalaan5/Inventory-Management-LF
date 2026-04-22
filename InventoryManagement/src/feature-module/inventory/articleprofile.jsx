@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback,useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Sliders, Plus, X } from "react-feather";
 import { PlusCircle } from "feather-icons-react/build/IconComponents";
@@ -61,11 +61,7 @@ const ArticleProfile = () => {
   const [editingId, setEditingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  useEffect(() => {
-    handleRefresh();
-    fetchGlossaries();
-    //eslint-disable-next-line
-  }, []);
+
 
   useEffect(() => {
     if (error) {
@@ -117,46 +113,45 @@ const ArticleProfile = () => {
     }
   }, [currentArticle, glossaries]);
 
-  const handleRefresh = () => {
-    dispatch(fetchUnfilteredArticles({}));
-  };
+const handleRefresh = useCallback(() => {
+  dispatch(fetchUnfilteredArticles({}));
+}, [dispatch]);
 
-  const fetchGlossaries = async () => {
-    try {
-      const response = await AuthService.getGlossaries();
-     
-      setGlossaries(response.data.data || []);
-      console.log('Glossaries Response  --------------', response.data.data);
-    } catch (error) {
-      console.error("Error fetching glossaries:", error);
-      setGlossaries([]);
-    }
-  };
 
-  const fetchCategories = async () => {
-    try {
-      const response = await AuthService.getArticleCategories();
-      setCategories(response.data.data || []);
-      console.log('Categories Response  --------------',response.data.data)
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      setCategories([]);
-    }
-  };
 
-  const handleAddNewClick = () => {
-    resetForm();
-    fetchCategories(); 
-    fetchGlossaries();
-  };
 
-  const debouncedSearch = useCallback(
-    debounce((searchValue) => {
-      dispatch(setFilters({ search: searchValue }));
-      dispatch(fetchArticles({ ...filters, search: searchValue }));
-    }, 500),
-    [dispatch, filters]
-  );
+const fetchGlossaries = useCallback(async () => {
+  try {
+    const response = await AuthService.getGlossaries();
+    setGlossaries(response.data.data || []);
+  } catch (error) {
+    console.error("Error fetching glossaries:", error);
+    setGlossaries([]);
+  }
+}, []);
+
+useEffect(() => {
+  handleRefresh();
+  fetchGlossaries();
+}, [handleRefresh, fetchGlossaries]);
+
+const fetchCategories = useCallback(async () => {
+  try {
+    const response = await AuthService.getArticleCategories();
+    setCategories(response.data.data || []);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    setCategories([]);
+  }
+}, []);
+
+
+const debouncedSearch = useMemo(() => {
+  return debounce((searchValue, filtersSnapshot) => {
+    dispatch(setFilters({ search: searchValue }));
+    dispatch(fetchArticles({ ...filtersSnapshot, search: searchValue }));
+  }, 500);
+}, [dispatch]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -326,26 +321,31 @@ const handleEdit = async (id) => {
   //   }
   // };
 
-  const resetForm = () => {
-    setFormData({
-      title: "",
-      category: "",
-      brand: "",
-      model: "",
-      year: new Date(),
-      sku: "",
-      weight: "",
-      dimensions: "",
-      unit_: "piece",
-      description: "",
-    });
-    setAttributes([{ glossary_id: "", value: "" }]);
-    setEditingId(null);
-    // setModalKey(prev => prev + 1);
-    dispatch(clearCurrentArticle());
-  };
+const resetForm = useCallback(() => {
+  setFormData({
+    title: "",
+    category: "",
+    brand: "",
+    model: "",
+    year: new Date(),
+    sku: "",
+    weight: "",
+    dimensions: "",
+    unit_: "piece",
+    description: "",
+  });
+  setAttributes([{ glossary_id: "", value: "" }]);
+  setEditingId(null);
+  dispatch(clearCurrentArticle());
+}, [dispatch]);
 
 
+
+const handleAddNewClick = useCallback(() => {
+  resetForm();
+  fetchCategories();
+  fetchGlossaries();
+}, [fetchCategories,resetForm, fetchGlossaries]);
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
