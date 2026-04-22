@@ -156,7 +156,7 @@ const AllRoutes = () => {
   const data = useSelector((state) => state.toggle_header);
   const dispatch = useDispatch();
   const { user, token } = useSelector(state => state.auth); 
-  const { items } = useSelector(state => state.menu);
+
   const [isAuthChecked, setIsAuthChecked] = useState(false);
 
 
@@ -177,22 +177,17 @@ const AllRoutes = () => {
     setIsAuthChecked(true);
   }, [dispatch]); 
 
-  useEffect(() => {
-  console.log("=== TOKEN/USER CHANGED ===");
-  console.log("token:", token);
-  console.log("user:", user);
-  console.log("items:", items.length);
-}, [token, user]);
+
 
 
 
    useEffect(() => {
     if (user?.id && token) {
-      console.log('Fetching menu for user:', user.id, 'role:', user.role);
+
       dispatch(clearMenu());
       dispatch(fetchMenu());
     }
-  }, [user?.id]);
+  }, [user?.id,token,dispatch]);
 
   if (!isAuthChecked) {
     return <Loader />;

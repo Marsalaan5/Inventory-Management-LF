@@ -687,7 +687,7 @@
 
 
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useCallback  } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { Sliders } from "react-feather";
@@ -740,11 +740,19 @@ const WareHouses = () => {
   const [editingId, setEditingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
 
+  // useEffect(() => {
+  //   handleRefresh();
+  //   // fetchUsers();
+  //   fetchAllUsers();
+  // }, [handleRefresh,fetchAllUsers]);
+
   useEffect(() => {
-    handleRefresh();
-    // fetchUsers();
-    fetchAllUsers();
-  }, []);
+  handleRefresh();
+}, [handleRefresh]);
+
+useEffect(() => {
+  fetchAllUsers();
+}, [fetchAllUsers]);
 
   // Show error notifications
   useEffect(() => {
@@ -781,22 +789,23 @@ const WareHouses = () => {
   //   }
   // };
 
-  const fetchAllUsers = async () => {
-    try {
-      const response = await AuthService.getAllUsers();
-      setUsers(response.data.data || []);
-      // console.log("Response+++++++++++++++++++++++++",response)
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    }
-  };
+const fetchAllUsers = useCallback(async () => {
+  try {
+    const response = await AuthService.getAllUsers();
+    setUsers(response.data.data || []);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+  }
+}, []);
 
-  const handleRefresh = () => {
-    const params = {};
-    if (searchTerm) params.searchTerm = searchTerm;
-    if (sortBy) params.sortBy = sortBy.value;
-    dispatch(fetchWarehouses(params));
-  };
+const handleRefresh = useCallback(() => {
+  const params = {};
+
+  if (searchTerm) params.searchTerm = searchTerm;
+  if (sortBy) params.sortBy = sortBy.value;
+
+  dispatch(fetchWarehouses(params));
+}, [searchTerm, sortBy, dispatch]);
 
   const handleSearch = () => {
     handleRefresh();

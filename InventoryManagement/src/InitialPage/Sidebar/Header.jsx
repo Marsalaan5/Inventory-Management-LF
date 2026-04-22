@@ -219,7 +219,7 @@ const handleSearchChange = (e) => {
     if (isAuthenticated && user) {
       fetchNotifications();
     }
-  }, [location.pathname]);
+  }, [location.pathname,isAuthenticated,user]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

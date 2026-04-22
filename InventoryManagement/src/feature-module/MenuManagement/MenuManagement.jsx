@@ -46,7 +46,7 @@ const MenuManagement = () => {
   useEffect(() => {
     fetchMenuItems();
     fetchAvailableRoles();
-  }, []);
+  },[]);
 
 
   const fetchMenuItems = async () => {
