@@ -1,0 +1,103 @@
+name: Fullstack CI/CD
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+
+  # ---------------------------
+  # 1. FRONTEND BUILD (CI)
+  # ---------------------------
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: InventoryManagement
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: InventoryManagement
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: InventoryManagement/build
+
+  # ---------------------------
+  # 2. BACKEND TEST (CI)
+  # ---------------------------
+  backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install backend
+        run: npm ci
+        working-directory: inventory-backend
+
+      - name: Run tests
+        run: npm test
+        working-directory: inventory-backend
+
+  # ---------------------------
+  # 3. DEPLOY (CD)
+  # ---------------------------
+  deploy:
+    needs: [frontend, backend]
+    runs-on: ubuntu-latest
+
+    steps:
+      # Download built frontend
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: build
+
+      # Copy build to EC2
+      - name: Copy frontend to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          source: "build/*"
+          target: "~/app/frontend/build"
+
+      # Deploy backend + restart
+      - name: Deploy backend on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd ~/app
+
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git .
+            else
+              git pull origin main
+            fi
+
+            cd inventory-backend
+            npm install
+
+            pm2 restart backend || pm2 start index.js --name backend

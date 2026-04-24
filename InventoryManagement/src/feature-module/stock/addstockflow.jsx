@@ -2396,8 +2396,7 @@ const AddStockFlow = () => {
   const canSync          = !!(formData.to_warehouse && (formData.transport || transportOptions[0]));
   const effectiveTransport = formData.transport || transportOptions[0] || null;
 
-  // ── Mount ─────────────────────────────────────────────────────────────────
-  useEffect(() => {
+ useEffect(() => {
     (async () => {
       await Promise.all([loadAllWarehouses(), loadTransportOptions()]);
       await restoreDraft();
@@ -3348,3 +3347,29 @@ const AddStockFlow = () => {
 };
 
 export default AddStockFlow;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

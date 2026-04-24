@@ -25,7 +25,7 @@ const rootReducer = combineReducers({
   articles:articleReducer,
   products: productReducer,
   warehouse:warehouseReducer,
-  stockFlow:stockFlowReducer,
+  stock:stockFlowReducer,
   customer: customerReducer,
   hr:hrReducer,
   inventory:inventoryReducer,

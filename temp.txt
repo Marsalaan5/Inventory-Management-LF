@@ -1,0 +1,666 @@
+-- ============================================================
+--  email_templates seed  –  StockFlow / StockRequest system
+--  Dynamic placeholders use {{variable_name}} syntax.
+--  Replace them server-side before sending (string replace / 
+--  a template engine like Handlebars / mustache).
+-- ============================================================
+
+INSERT INTO `email_templates`
+  (`type`, `subject`, `body`, `created_at`, `updated_at`)
+VALUES
+
+-- 1. stock_request  ─────────────────────────────────────────
+(
+  'stock_request',
+  'New Stock Request – {{stock_req_id}} [{{priority}}]',
+  '<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:0;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr><td align="center" style="padding:40px 16px;">
+      <table width="600" cellpadding="0" cellspacing="0" 
+      style="background:#fff;border-radius:8px;overflow:hidden;
+      box-shadow:0 2px 8px rgba(0,0,0,.08);">
+
+     
+        
+  <tr>
+  <td style="background:#0d6efd;padding:24px 32px;">
+    
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+  
+        <td valign="middle">
+          <h1 style="color:#fff;margin:0;font-size:20px;">
+            📦 New Stock Request
+          </h1>
+          <p style="color:#cfe2ff;margin:4px 0 0;font-size:13px;">
+            Request ID: <strong>{{stock_req_id}}</strong>
+          </p>
+        </td>
+        
+         <td width="60" valign="middle">
+          <img src="{{https://media.licdn.com/dms/image/v2/C4E0BAQF8rTfqHh9bCw/company-logo_200_200/company-logo_200_200/0/1631349665180?e=2147483647&v=beta&t=4uzb4MYaeBjM-GVqhW2J7-pC1ylL1nmFurukJU_w5Bk}}" 
+               alt="Livefibre" 
+               width="60" 
+               style="display:block;border:0;outline:none;">
+        </td>
+
+      </tr>
+    </table>
+
+  </td>
+</tr>
+
+   
+        <tr><td style="padding:28px 32px;">
+          <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{dispatcher_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            <strong>{{requester_name}}</strong> ({{requester_email}}) has submitted a new stock request assigned to you.
+          </p>
+
+   
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;margin-bottom:20px;font-size:14px;">
+            <tr style="background:#f8f9fa;">
+              <td width="40%"><strong>Priority</strong></td>
+              <td>{{priority}}</td>
+            </tr>
+            <tr>
+              <td><strong>Requested On</strong></td>
+              <td>{{created_at}}</td>
+            </tr>
+            <tr style="background:#f8f9fa;">
+              <td><strong>Description</strong></td>
+              <td>{{description}}</td>
+            </tr>
+            <tr>
+              <td><strong>CC</strong></td>
+              <td>{{cc_recipients}}</td>
+            </tr>
+          </table>
+
+        
+          <p style="font-weight:600;margin:0 0 8px;color:#212529;">Requested Articles</p>
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;font-size:13px;">
+            <tr style="background:#f8f9fa;">
+              <th align="left">Article</th>
+              <th align="center">Qty</th>
+            </tr>
+            {{articles_rows}}
+          </table>
+
+          <p style="margin:24px 0 0;color:#6c757d;font-size:13px;">
+            Please log in to the portal to review and respond to this request.
+          </p>
+        </td></tr>
+
+
+        <tr><td style="padding:0 32px 28px;">
+          <a href="{{portal_url}}/stock-requests/{{stock_req_id}}"
+             style="display:inline-block;background:#0d6efd;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none;font-size:14px;">
+            View Request →
+          </a>
+        </td></tr>
+
+      
+        <tr><td style="background:#f8f9fa;padding:16px 32px;font-size:11px;color:#adb5bd;border-top:1px solid #dee2e6;">
+          This is an automated message from the StockFlow system. Do not reply directly to this email.
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>',
+  NOW(), NOW()
+),
+
+-- 2. approved_request  ──────────────────────────────────────
+(
+  'approved_request',
+  'Your Stock Request {{stock_req_id}} Has Been Approved ✅',
+  '<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:0;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr><td align="center" style="padding:40px 16px;">
+      <table width="600" cellpadding="0" cellspacing="0" 
+      style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+
+
+   <tr>
+  <td style="background:#198754;padding:24px 32px;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td valign="middle">
+          <h1 style="color:#fff;margin:0;font-size:20px;">
+            ✅ Request Approved
+          </h1>
+          <p style="color:#d1e7dd;margin:4px 0 0;font-size:13px;">
+            Request ID: <strong>{{stock_req_id}}</strong>
+          </p>
+        </td>
+
+        <td width="60" valign="middle">
+          <img src="{{logo_url}}"
+               alt="Logo"
+               width="40"
+               style="display:block;border:0;outline:none;">
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+        <tr><td style="padding:28px 32px;">
+          <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{requester_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            Great news! Your stock request has been <strong style="color:#198754;">approved</strong> by
+            <strong>{{dispatcher_name}}</strong> ({{dispatcher_email}}).
+          </p>
+
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;margin-bottom:20px;font-size:14px;">
+            <tr style="background:#f8f9fa;">
+              <td width="40%"><strong>Approved On</strong></td>
+              <td>{{approved_at}}</td>
+            </tr>
+            <tr>
+              <td><strong>Scheduled Dispatch</strong></td>
+              <td><strong style="color:#198754;">{{scheduled_dispatch}}</strong></td>
+            </tr>
+            <tr style="background:#f8f9fa;">
+              <td><strong>Dispatcher Notes</strong></td>
+              <td>{{dispatcher_notes}}</td>
+            </tr>
+            <tr>
+              <td><strong>Linked StockFlow ID</strong></td>
+              <td>{{stock_id}}</td>
+            </tr>
+          </table>
+
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;font-size:13px;">
+            <tr style="background:#f8f9fa;">
+              <th align="left">Article</th>
+              <th align="center">Qty</th>
+            </tr>
+            {{articles_rows}}
+          </table>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 28px;">
+          <a href="{{portal_url}}/stock-requests/{{stock_req_id}}"
+             style="display:inline-block;background:#198754;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none;font-size:14px;">
+            View Approval Details →
+          </a>
+        </td></tr>
+
+        <tr><td style="background:#f8f9fa;padding:16px 32px;font-size:11px;color:#adb5bd;border-top:1px solid #dee2e6;">
+          This is an automated message from the StockFlow system. Do not reply directly to this email.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>',
+  NOW(), NOW()
+),
+
+-- 3. follow_up  ─────────────────────────────────────────────
+(
+  'follow_up',
+  'Follow-up Reminder: Stock Request {{stock_req_id}} Still Pending',
+  '<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:0;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr><td align="center" style="padding:40px 16px;">
+      <table width="600" cellpadding="0" cellspacing="0" 
+      style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+        
+
+        <tr>
+          
+          <td style="background:#fd7e14;padding:24px 32px;">
+             <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td valign="middle">
+          <h1 style="color:#fff;margin:0;font-size:20px;">⏰ Follow-up Reminder</h1>
+          <p  style="color:#ffe8d1;margin:4px 0 0;font-size:13px;">Request ID: <strong>{{stock_req_id}}</strong></p>
+        </td>
+        
+         <td width="60" valign="middle">
+          <img src="{{logo_url}}"
+               alt="Logo"
+               width="40"
+               style="display:block;border:0;outline:none;">
+        </td>
+      </tr>
+    </table>
+  </td>
+        
+        
+        </tr>
+
+        <tr><td style="padding:28px 32px;">
+          <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{dispatcher_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            This is a friendly reminder that stock request <strong>{{stock_req_id}}</strong> from
+            <strong>{{requester_name}}</strong> has been pending for <strong>{{days_pending}} day(s)</strong>
+            and still awaits your response.
+          </p>
+
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;margin-bottom:20px;font-size:14px;">
+            <tr style="background:#f8f9fa;">
+              <td width="40%"><strong>Submitted On</strong></td>
+              <td>{{created_at}}</td>
+            </tr>
+            <tr>
+              <td><strong>Priority</strong></td>
+              <td>{{priority}}</td>
+            </tr>
+            <tr style="background:#f8f9fa;">
+              <td><strong>Days Pending</strong></td>
+              <td><strong style="color:#fd7e14;">{{days_pending}}</strong></td>
+            </tr>
+          </table>
+
+          <p style="color:#6c757d;font-size:13px;margin:0;">
+            Please review and respond at your earliest convenience to avoid escalation.
+          </p>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 28px;">
+          <a href="{{portal_url}}/stock-requests/{{stock_req_id}}"
+             style="display:inline-block;background:#fd7e14;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none;font-size:14px;">
+            Respond Now →
+          </a>
+        </td></tr>
+
+        <tr><td style="background:#f8f9fa;padding:16px 32px;font-size:11px;color:#adb5bd;border-top:1px solid #dee2e6;">
+          This is an automated follow-up from the StockFlow system.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>',
+  NOW(), NOW()
+),
+
+-- 4. escalation  ────────────────────────────────────────────
+(
+  'escalation',
+  '🚨 Escalation Alert: Stock Request {{stock_req_id}} Requires Immediate Attention',
+  '<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:0;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr><td align="center" style="padding:40px 16px;">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+
+        <tr><td style="background:#dc3545;padding:24px 32px;">
+          
+          
+          
+            <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td valign="middle">
+          <h1 style="color:#fff;margin:0;font-size:20px;">🚨 Escalation Alert</h1>
+          <p  style="color:#f8d7da;margin:4px 0 0;font-size:13px;">Request ID: <strong>{{stock_req_id}}</strong></p>
+        </td>
+        
+        
+        
+         <td width="60" valign="middle">
+          <img src="{{logo_url}}"
+               alt="Logo"
+               width="40"
+               style="display:block;border:0;outline:none;">
+        </td>
+      </tr>
+    </table>
+  </td>
+        </tr>
+
+        <tr><td style="padding:28px 32px;">
+          <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{escalation_recipient_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            Stock request <strong>{{stock_req_id}}</strong> has been escalated to you because it has remained
+            unanswered for <strong>{{days_pending}} day(s)</strong>, exceeding the defined threshold of
+            <strong>{{escalation_days}} day(s)</strong>.
+          </p>
+
+          <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px 16px;margin-bottom:20px;">
+            <strong>⚠️ Action Required:</strong> Please ensure this request is reviewed and actioned immediately.
+          </div>
+
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;margin-bottom:20px;font-size:14px;">
+            <tr style="background:#f8f9fa;">
+              <td width="40%"><strong>Original Dispatcher</strong></td>
+              <td>{{dispatcher_name}} ({{dispatcher_email}})</td>
+            </tr>
+            <tr>
+              <td><strong>Requester</strong></td>
+              <td>{{requester_name}} ({{requester_email}})</td>
+            </tr>
+            <tr style="background:#f8f9fa;">
+              <td><strong>Priority</strong></td>
+              <td>{{priority}}</td>
+            </tr>
+            <tr>
+              <td><strong>Submitted On</strong></td>
+              <td>{{created_at}}</td>
+            </tr>
+            <tr style="background:#f8f9fa;">
+              <td><strong>Days Overdue</strong></td>
+              <td><strong style="color:#dc3545;">{{days_pending}}</strong></td>
+            </tr>
+          </table>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 28px;">
+          <a href="{{portal_url}}/stock-requests/{{stock_req_id}}"
+             style="display:inline-block;background:#dc3545;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none;font-size:14px;">
+            Review Escalated Request →
+          </a>
+        </td></tr>
+
+        <tr><td style="background:#f8f9fa;padding:16px 32px;font-size:11px;color:#adb5bd;border-top:1px solid #dee2e6;">
+          This escalation was triggered automatically by StockFlow after {{escalation_days}} days of inactivity.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>',
+  NOW(), NOW()
+),
+
+-- 5. deadline  ──────────────────────────────────────────────
+(
+  'deadline',
+  '📅 Dispatch Deadline Approaching – {{stock_req_id}} (Due {{scheduled_dispatch}})',
+  '<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:0;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr><td align="center" style="padding:40px 16px;">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+
+        <tr>
+          <td style="background:#6f42c1;padding:24px 32px;">
+            
+              <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td valign="middle">
+          
+          <h1 style="color:#fff;margin:0;font-size:20px;">📅 Dispatch Deadline Reminder</h1>
+          <p  style="color:#e2d9f3;margin:4px 0 0;font-size:13px;">Request ID: <strong>{{stock_req_id}}</strong></p>
+        </td>
+        
+          <td width="60" valign="middle">
+          <img src="{{logo_url}}"
+               alt="Logo"
+               width="40"
+               style="display:block;border:0;outline:none;">
+        </td>
+      </tr>
+    </table>
+  </td>
+        
+        </tr>
+
+        <tr><td style="padding:28px 32px;">
+          <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{dispatcher_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            The scheduled dispatch date for stock request <strong>{{stock_req_id}}</strong> is
+            <strong style="color:#6f42c1;">{{scheduled_dispatch}}</strong>, which is
+            <strong>{{days_remaining}} day(s)</strong> away.
+          </p>
+
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;margin-bottom:20px;font-size:14px;">
+            <tr style="background:#f8f9fa;">
+              <td width="40%"><strong>Requester</strong></td>
+              <td>{{requester_name}} ({{requester_email}})</td>
+            </tr>
+            <tr>
+              <td><strong>Scheduled Dispatch</strong></td>
+              <td><strong style="color:#6f42c1;">{{scheduled_dispatch}}</strong></td>
+            </tr>
+            <tr style="background:#f8f9fa;">
+              <td><strong>Days Remaining</strong></td>
+              <td>{{days_remaining}}</td>
+            </tr>
+            <tr>
+              <td><strong>Priority</strong></td>
+              <td>{{priority}}</td>
+            </tr>
+          </table>
+
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;font-size:13px;">
+            <tr style="background:#f8f9fa;">
+              <th align="left">Article</th>
+              <th align="center">Qty</th>
+            </tr>
+            {{articles_rows}}
+          </table>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 28px;">
+          <a href="{{portal_url}}/stock-requests/{{stock_req_id}}"
+             style="display:inline-block;background:#6f42c1;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none;font-size:14px;">
+            View Request →
+          </a>
+        </td></tr>
+
+        <tr><td style="background:#f8f9fa;padding:16px 32px;font-size:11px;color:#adb5bd;border-top:1px solid #dee2e6;">
+          This deadline reminder was sent automatically by StockFlow.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>',
+  NOW(), NOW()
+),
+
+-- 6. resolution  ────────────────────────────────────────────
+(
+  'resolution',
+  'Stock Request {{stock_req_id}} Has Been Resolved',
+  '<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:0;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+      <table width="600" cellpadding="0" cellspacing="0" 
+      style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+
+        <tr>
+          
+          
+          <td style="background:#0dcaf0;padding:24px 32px;">
+            
+                  
+              <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td valign="middle">
+          <h1 style="color:#fff;margin:0;font-size:20px;">🎉 Request Resolved</h1>
+          <p  style="color:#cff4fc;margin:4px 0 0;font-size:13px;">Request ID: <strong>{{stock_req_id}}</strong></p>
+        </td>
+        
+          <td width="60" valign="middle">
+          <img src="{{logo_url}}"
+               alt="Logo"
+               width="40"
+               style="display:block;border:0;outline:none;">
+        </td>
+      </tr>
+    </table>
+  </td>
+        
+        </tr>
+
+        <tr><td style="padding:28px 32px;">
+          <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{requester_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            Your stock request has been fully resolved. The stock has been dispatched and linked to a
+            StockFlow transfer record.
+          </p>
+
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;margin-bottom:20px;font-size:14px;">
+            <tr style="background:#f8f9fa;">
+              <td width="40%"><strong>Resolved On</strong></td>
+              <td>{{resolved_at}}</td>
+            </tr>
+            <tr>
+              <td><strong>Resolved By</strong></td>
+              <td>{{dispatcher_name}} ({{dispatcher_email}})</td>
+            </tr>
+            <tr style="background:#f8f9fa;">
+              <td><strong>Linked StockFlow ID</strong></td>
+              <td><strong>{{stock_id}}</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Resolution Notes</strong></td>
+              <td>{{resolution_notes}}</td>
+            </tr>
+          </table>
+
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;font-size:13px;">
+            <tr style="background:#f8f9fa;">
+              <th align="left">Article</th>
+              <th align="center">Qty</th>
+            </tr>
+            {{articles_rows}}
+          </table>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 28px;">
+          <a href="{{portal_url}}/stock-flows/{{stock_id}}"
+             style="display:inline-block;background:#0dcaf0;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none;font-size:14px;">
+            View StockFlow Transfer →
+          </a>
+        </td></tr>
+
+        <tr><td style="background:#f8f9fa;padding:16px 32px;font-size:11px;color:#adb5bd;border-top:1px solid #dee2e6;">
+          This confirmation was sent automatically by StockFlow.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>',
+  NOW(), NOW()
+),
+
+-- 7. received_stock  ────────────────────────────────────────
+(
+  'received_stock',
+  'Stock Received – {{stock_req_id}} Marked as Received ✅',
+  '<!DOCTYPE html>
+<html>
+<body style="font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:0;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr><td align="center" style="padding:40px 16px;">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+
+        <tr><td style="background:#20c997;padding:24px 32px;">
+          
+                
+              <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td valign="middle">
+          <h1 style="color:#fff;margin:0;font-size:20px;">📬 Stock Received</h1>
+          <p  style="color:#d2f4ea;margin:4px 0 0;font-size:13px;">Request ID: <strong>{{stock_req_id}}</strong></p>
+        </td>
+        
+          <td width="60" valign="middle">
+          <img src="{{logo_url}}"
+               alt="Logo"
+               width="40"
+               style="display:block;border:0;outline:none;">
+        </td>
+      </tr>
+    </table>
+        
+        </tr>
+
+        <tr><td style="padding:28px 32px;">
+          <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{dispatcher_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            <strong>{{requester_name}}</strong> ({{requester_email}}) has confirmed receipt of the stock
+            dispatched under request <strong>{{stock_req_id}}</strong>.
+          </p>
+
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;margin-bottom:20px;font-size:14px;">
+            <tr style="background:#f8f9fa;">
+              <td width="40%"><strong>Received On</strong></td>
+              <td>{{received_at}}</td>
+            </tr>
+            <tr>
+              <td><strong>Received By</strong></td>
+              <td>{{requester_name}} ({{requester_email}})</td>
+            </tr>
+            <tr style="background:#f8f9fa;">
+              <td><strong>Linked StockFlow ID</strong></td>
+              <td>{{stock_id}}</td>
+            </tr>
+            <tr>
+              <td><strong>Receiver Notes</strong></td>
+              <td>{{receiver_notes}}</td>
+            </tr>
+          </table>
+
+          <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;font-size:13px;">
+            <tr style="background:#f8f9fa;">
+              <th align="left">Article</th>
+              <th align="center">Qty</th>
+            </tr>
+            {{articles_rows}}
+          </table>
+        </td></tr>
+
+        <tr><td style="padding:0 32px 28px;">
+          <a href="{{portal_url}}/stock-requests/{{stock_req_id}}"
+             style="display:inline-block;background:#20c997;color:#fff;padding:10px 24px;border-radius:6px;text-decoration:none;font-size:14px;">
+            View Full Record →
+          </a>
+        </td></tr>
+
+        <tr><td style="background:#f8f9fa;padding:16px 32px;font-size:11px;color:#adb5bd;border-top:1px solid #dee2e6;">
+          This confirmation was sent automatically by StockFlow.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>',
+  NOW(), NOW()
+);
+
+-- ============================================================
+--  Dynamic placeholder reference
+-- ============================================================
+-- Common to most templates:
+--   {{stock_req_id}}           e.g. REQ-2024-001
+--   {{requester_name}}         full name of the person who made the request
+--   {{requester_email}}
+--   {{dispatcher_name}}        person assigned to fulfill
+--   {{dispatcher_email}}
+--   {{priority}}               urgent | standard | low
+--   {{created_at}}             formatted datetime
+--   {{description}}            optional message on the request
+--   {{cc_recipients}}          comma-joined list of CC emails
+--   {{articles_rows}}          HTML <tr> block — built server-side from JSON array
+--   {{portal_url}}             base URL of your app  e.g. https://app.example.com
+--
+-- Template-specific:
+--   approved_request  : {{approved_at}}, {{scheduled_dispatch}}, {{dispatcher_notes}}, {{stock_id}}
+--   follow_up         : {{days_pending}}
+--   escalation        : {{escalation_days}}, {{days_pending}}, {{escalation_recipient_name}}
+--   deadline          : {{scheduled_dispatch}}, {{days_remaining}}
+--   resolution        : {{resolved_at}}, {{resolution_notes}}, {{stock_id}}
+--   received_stock    : {{received_at}}, {{receiver_notes}}, {{stock_id}}
+-- ============================================================

@@ -327,6 +327,7 @@
 // authService.js - UPDATED with Stock Flow with Products methods
 
 
+
 import axiosInstance from "./axiosInstance";
 
 const AuthService = {
@@ -412,62 +413,62 @@ const AuthService = {
   createWarehouse: (data) =>axiosInstance.post(`/auth/createWarehouse/create`, data),
   updateWarehouseById: (id, data) =>axiosInstance.put(`/auth/editWarehouseById/${id}`, data),
   deleteWarehouse: (id) =>axiosInstance.delete(`/auth/deleteWarehouseById/${id}`),
-
-// --------------------------------------------------------------------------------------------------
-
+  
+  // --------------------------------------------------------------------------------------------------
+  
   getGlossaries: (params) => axiosInstance.get(`/auth/getGlossaries`, { params }),
   getGlossaryByID: (id) => axiosInstance.get(`/auth/getGlossaryById/${id}`),
-
-// --------------------------------------------------------------------------------------------------
-
+  
+  // --------------------------------------------------------------------------------------------------
+  
   getArticleCategories: () => axiosInstance.get('/auth/listArticleCategories'),
   getArticles: (params) => axiosInstance.get(`/auth/getArticle`, { params }),
   getUnfilteredArticles: (params) => axiosInstance.get(`/auth/listUnfilteredArticles`, { params }),
   getArticleById: (id) => axiosInstance.get(`/auth/getArticle/${id}`),
   createArticle: (data) => axiosInstance.post(`/auth/createArticle`, data),
-
-// --------------------------------------------------------------------------------------------------
-
-// Product
+  
+  // --------------------------------------------------------------------------------------------------
+  
+  // Product
   getProduct: (params) => axiosInstance.get('/auth/getProduct', { params }),
   getProductById: (id) => axiosInstance.get(`/auth/getProductById/${id}`),
   getProductByScan: (code) => axiosInstance.get(`/auth/getProductByScan/scan/${code}`),
   createProduct: (data) => axiosInstance.post(`/auth/createProduct`, data),
   // bulkCreateProducts:(data) => 
-  //   axiosInstance.post(`/auth/products/bulk`, { products: data }),
+    //   axiosInstance.post(`/auth/products/bulk`, { products: data }),
   // bulkImportSubmit:(data) => 
-  //   axiosInstance.post(`/auth/bulkImportSubmit`, { products: data }),
-
-bulkImportSubmit: (formData) => axiosInstance.post('/auth/bulkImportExcel', formData),
-updateProductById: (prod_id, data) => axiosInstance.put(`/auth/editProductById?prod-id=${prod_id}`, data),
-deleteProduct: (id) => axiosInstance.delete(`/auth/deleteProductById/${id}`),
-
-
-// --------------------------------------------------------------------------------------------------
-
+    //   axiosInstance.post(`/auth/bulkImportSubmit`, { products: data }),
+  
+  bulkImportSubmit: (formData) => axiosInstance.post('/auth/bulkImportExcel', formData),
+  updateProductById: (prod_id, data) => axiosInstance.put(`/auth/editProductById?prod-id=${prod_id}`, data),
+  deleteProduct: (id) => axiosInstance.delete(`/auth/deleteProductById/${id}`),
+  
+  
+  // --------------------------------------------------------------------------------------------------
+  
   // Lot Management
-// saveLot: (data) => axiosInstance.post('/auth/lots', data),
-// getLots: (params) => axiosInstance.get('/auth/lots', { params }),
-// getLotById: (lotId) => axiosInstance.get(`/auth/lots/${lotId}`),
-// deleteLot: (lotId) => axiosInstance.delete(`/auth/lots/${lotId}`),
-// submitLot: (lotId) => axiosInstance.post(`/auth/lots/${lotId}/submit`),
-// bulkCreateProductsWithLot: (data) =>
-//   axiosInstance.post('/auth/bulkImportSync', data),
-
-// --------------------------------------------------------------------------------------------------
-
-
+  // saveLot: (data) => axiosInstance.post('/auth/lots', data),
+  // getLots: (params) => axiosInstance.get('/auth/lots', { params }),
+  // getLotById: (lotId) => axiosInstance.get(`/auth/lots/${lotId}`),
+  // deleteLot: (lotId) => axiosInstance.delete(`/auth/lots/${lotId}`),
+  // submitLot: (lotId) => axiosInstance.post(`/auth/lots/${lotId}/submit`),
+  // bulkCreateProductsWithLot: (data) =>
+    //   axiosInstance.post('/auth/bulkImportSync', data),
+  
+  // --------------------------------------------------------------------------------------------------
+  
+  
   // ============================================
   // PRODCUT ACTIVITY
   // ============================================
   
-getProductActivities:(productUuid) => axiosInstance.get(`/auth/products/${productUuid}/activities`),
-getAllProductActivities:(productUuid) => axiosInstance.get(`/auth/products/${productUuid}/activities/all`),
-createProductActivity: (productUuid, activityData) => axiosInstance.post(`/auth/products/${productUuid}/activities`,activityData),
-
-
-// --------------------------------------------------------------------------------------------------
-
+  getProductActivities:(productUuid) => axiosInstance.get(`/auth/products/${productUuid}/activities`),
+  getAllProductActivities:(productUuid) => axiosInstance.get(`/auth/products/${productUuid}/activities/all`),
+  createProductActivity: (productUuid, activityData) => axiosInstance.post(`/auth/products/${productUuid}/activities`,activityData),
+  
+  
+  // --------------------------------------------------------------------------------------------------
+  
   // ============================================
   // STOCK FLOW
   // ============================================
@@ -478,76 +479,79 @@ createProductActivity: (productUuid, activityData) => axiosInstance.post(`/auth/
   getStockFlowById: (id) => axiosInstance.get(`/auth/getStockFlowByID/${id}`),
   getStockFlowProducts: (id) => axiosInstance.get(`/auth/getStockFlowProducts/${id}`),
   getDestinations:() => axiosInstance.get(`/auth/listLocationNames`),
-
+  
   // createStockFlowWithBill: (formData) => 
-  //   axiosInstance.post(`/auth/createStockFlow`, formData, {
+    //   axiosInstance.post(`/auth/createStockFlow`, formData, {
   //     headers: {
-  //       'Content-Type': 'multipart/form-data',
-  //     },
-  //   }),
-
-
-get_existing_stock_flow:() => axiosInstance.get(`/auth/getExistingStock`),
-removeStockProduct: (partial_code) =>axiosInstance.put(`/auth/removeStockProduct/${partial_code}`),
-discardDraft: () => axiosInstance.delete('/auth/discardDraft'),
-stockFlowSync: (formData) => axiosInstance.post('/auth/stockFlowSync', formData),
-stockFlowSubmit:(formData)=>axiosInstance.post('/auth/stockFlowSubmit',formData),
-createStockFlow: (formData) => axiosInstance.post(`/auth/createStockFlow`, formData, {
+    //       'Content-Type': 'multipart/form-data',
+    //     },
+    //   }),
+    
+    
+    get_existing_stock_flow:() => axiosInstance.get(`/auth/getExistingStock`),
+    removeStockProduct: (partial_code) =>axiosInstance.put(`/auth/removeStockProduct/${partial_code}`),
+    discardDraft: () => axiosInstance.delete('/auth/discardDraft'),
+    stockFlowSync: (formData) => axiosInstance.post('/auth/stockFlowSync', formData),
+    stockFlowSubmit:(formData)=>axiosInstance.post('/auth/stockFlowSubmit',formData),
+    createStockFlow: (formData) => axiosInstance.post(`/auth/createStockFlow`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',},}),
-
-dispatchStockFlow: (id) => axiosInstance.post(`/auth/stockflow/${id}/dispatch`),
-receiveStockFlow: (id, formData) => axiosInstance.post(`/auth/stockflow/${id}/receive`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',},}),
-
-updateStockFlowById: (id, data) =>axiosInstance.patch(`/auth/updateStockFLowByID/${id}`, data),
-deleteStockFlow: (id) => axiosInstance.delete(`/auth/deleteStockFlow/${id}`),
-getStockFlowStats: () => axiosInstance.get(`/auth/getStockFlowStats/stats`),
-downloadStockFlowInvoice: (id) => axiosInstance.get(`/auth/stockflow/${id}/invoice`, {
-      responseType: "blob",}),
-
-  // Chart data endpoints
-  getStockFlowChartData: (params) => axiosInstance.get("/auth/getStockFlowChartData", { params }),
-  getLowStockChartData: (params) => axiosInstance.get("/auth/getLowStockChartData", { params }),
-  getOutOfStockTrendData: (params) =>axiosInstance.get("/auth/getOutOfStockTrendData", { params }),
-  getStockStatusDistribution: (params) => axiosInstance.get("/auth/getStockStatusDistribution", { params }),
-  getWarehouseComparison: (params) => axiosInstance.get("/auth/getWarehouseComparison", { params }),
-
-
-// --------------------------------------------------------------------------------------------------
-  
-  // getLocation:() => axiosInstance.get("/auth/listLocationNames"),
-  
-  // Activities
-  getActivities: (params) => axiosInstance.get("/auth/activities", { params }),
-  getActivityStats: () => axiosInstance.get("/auth/activities/stats"),
-
-// --------------------------------------------------------------------------------------------------
-
-
-  // Email Service
-  getEmails: (category = "inbox", page = 1, limit = 10, search = "") => axiosInstance.get(`/auth/getEmail/${category}`, {
-  params: { page, limit, search },}),
-  getEmailById: (id) => axiosInstance.get(`/auth/getEmailById/${id}`),
-  sendEmails: (data) => axiosInstance.post(`/auth/createEmail`, data),
-  saveDraft: (draftData) => axiosInstance.post(`/auth/draftEmail`, draftData),
-  sendStockRequest: (stockRequestData) => axiosInstance.post(`/auth/stock-request`, stockRequestData),
-  respondToStockRequest: (emailId, action, deadlineDays, notes = "") => axiosInstance.post(`/auth/stock-request/${emailId}/respond`,   
-  { action,deadlineDays,notes,}),
-  markEmailAsRead: (id) => axiosInstance.put(`/auth/editEmailMark/${id}/read`),
-  toggleEmailStar: (id, starred) => axiosInstance.put(`/auth/editEmailTogglemail/${id}/star`, { starred }),
-  deleteEmail: (id) => axiosInstance.delete(`/auth/deleteEmail/${id}`),
-  bulkEmailAction: (action, emailIds) => axiosInstance.post(`/auth/bulkEmail/${action}`, { emailIds: emailIds }),
-  getTemplates: () => axiosInstance.get(`/auth/getTemplates/all`),
-
-
-// --------------------------------------------------------------------------------------------------
-
-  // Notifications
-  getNotifications: (limit = 20) => axiosInstance.get(`/auth/notification`, { params: { limit } }),
-  markNotificationAsRead: (id) => axiosInstance.put(`/auth/notification/${id}/read`),
-  markAllNotificationsAsRead: () => axiosInstance.put(`/auth/notification/mark-all-read`),
+        
+        dispatchStockFlow: (id) => axiosInstance.post(`/auth/stockflow/${id}/dispatch`),
+        receiveStockFlow: (id, formData) => axiosInstance.post(`/auth/stockflow/${id}/receive`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',},}),
+            
+            updateStockFlowById: (id, data) =>axiosInstance.patch(`/auth/updateStockFLowByID/${id}`, data),
+            deleteStockFlow: (id) => axiosInstance.delete(`/auth/deleteStockFlow/${id}`),
+            getStockFlowStats: () => axiosInstance.get(`/auth/getStockFlowStats/stats`),
+            downloadStockFlowInvoice: (id) => axiosInstance.get(`/auth/stockflow/${id}/invoice`, {
+              responseType: "blob",}),
+              
+              // Chart data endpoints
+              getStockFlowChartData: (params) => axiosInstance.get("/auth/getStockFlowChartData", { params }),
+              getLowStockChartData: (params) => axiosInstance.get("/auth/getLowStockChartData", { params }),
+              getOutOfStockTrendData: (params) =>axiosInstance.get("/auth/getOutOfStockTrendData", { params }),
+              getStockStatusDistribution: (params) => axiosInstance.get("/auth/getStockStatusDistribution", { params }),
+              getWarehouseComparison: (params) => axiosInstance.get("/auth/getWarehouseComparison", { params }),
+              
+              
+              getStockRequests: (params) => axiosInstance.get("/auth/getStockRequest",{ params }),
+              createStockRequest: (data) => axiosInstance.post(`/auth/createStockRequest`, data),
+              markStockRequestRead:(data) => axiosInstance.put("/auth/markStockRequestRead",data),
+              // --------------------------------------------------------------------------------------------------
+              
+              // getLocation:() => axiosInstance.get("/auth/listLocationNames"),
+              
+              // Activities
+              getActivities: (params) => axiosInstance.get("/auth/activities", { params }),
+              getActivityStats: () => axiosInstance.get("/auth/activities/stats"),
+              
+              // --------------------------------------------------------------------------------------------------
+              
+              
+              // Email Service
+              getEmails: (category = "inbox", page = 1, limit = 10, search = "") => axiosInstance.get(`/auth/getEmail/${category}`, {
+                params: { page, limit, search },}),
+                getEmailById: (id) => axiosInstance.get(`/auth/getEmailById/${id}`),
+                sendEmails: (data) => axiosInstance.post(`/auth/createEmail`, data),
+                saveDraft: (draftData) => axiosInstance.post(`/auth/draftEmail`, draftData),
+                sendStockRequest: (stockRequestData) => axiosInstance.post(`/auth/stock-request`, stockRequestData),
+                respondToStockRequest: (emailId, action, deadlineDays, notes = "") => axiosInstance.post(`/auth/stock-request/${emailId}/respond`,   
+                  { action,deadlineDays,notes,}),
+                  markEmailAsRead: (id) => axiosInstance.put(`/auth/editEmailMark/${id}/read`),
+                  toggleEmailStar: (id, starred) => axiosInstance.put(`/auth/editEmailTogglemail/${id}/star`, { starred }),
+                  deleteEmail: (id) => axiosInstance.delete(`/auth/deleteEmail/${id}`),
+                  bulkEmailAction: (action, emailIds) => axiosInstance.post(`/auth/bulkEmail/${action}`, { emailIds: emailIds }),
+                  getTemplates: () => axiosInstance.get(`/auth/getTemplates/all`),
+                  
+                  
+                  // --------------------------------------------------------------------------------------------------
+                  
+                  // Notifications
+                  getNotifications: (limit = 20) => axiosInstance.get(`/auth/notification`, { params: { limit } }),
+                  markNotificationAsRead: (id) => axiosInstance.put(`/auth/notification/${id}/read`),
+                  markAllNotificationsAsRead: () => axiosInstance.put(`/auth/notification/mark-all-read`),
 
 
 // --------------------------------------------------------------------------------------------------

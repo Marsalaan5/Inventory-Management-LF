@@ -369,9 +369,9 @@ export const sendTemplateEmail = async (
   
     await sendEmail({ 
       to, 
-      from: `"${senderName}" <${senderEmail}>`, //senderEmail,
+      from: `"${senderName}" <${senderEmail}>`,
       subject, 
-      html: body 
+      html: body,
     });
     
 
