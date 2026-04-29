@@ -146,6 +146,7 @@ export const all_routes = {
   stocktransfer: "/stock-transfer",
   stockrequest: "/stock-request",
   addnewstockrequest: "/add-new-stock-request",
+  stockrequestdetails:"stock-request-details/:id",
   stockflowdetails: "/stock-flow-details/:id",
   salesreport: "/sales-report",
   purchasereport: "/purchase-report",

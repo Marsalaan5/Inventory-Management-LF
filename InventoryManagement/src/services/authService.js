@@ -517,8 +517,26 @@ const AuthService = {
               
               
               getStockRequests: (params) => axiosInstance.get("/auth/getStockRequest",{ params }),
+              getStockRequestById:(id) => axiosInstance.get(`/auth/getStockRequestById/${id}`),
               createStockRequest: (data) => axiosInstance.post(`/auth/createStockRequest`, data),
               markStockRequestRead:(data) => axiosInstance.put("/auth/markStockRequestRead",data),
+
+
+                approveStockRequest: (id, data) =>
+    axiosInstance.patch(`/auth/approveStockRequest/${id}`, data),
+ 
+
+
+  // getStockRequestStats: () => axiosInstance.get(`/auth/getStockRequestStats`),
+ 
+
+  toggleStockRequestStar: (id, starred) =>
+    axiosInstance.put(`/auth/editEmailTogglemail/${id}/star`, { starred }),
+ 
+  // markStockRequestRead: (data) => axiosInstance.put("/auth/markStockRequestRead", data),
+markStockRequestReceived:(id) => axiosInstance.patch(`/auth/confirmStockDelivery/${id}`),
+
+  getDefaultCCEmails:() => axiosInstance.get("/auth/getDefaultCCEmails"),
               // --------------------------------------------------------------------------------------------------
               
               // getLocation:() => axiosInstance.get("/auth/listLocationNames"),

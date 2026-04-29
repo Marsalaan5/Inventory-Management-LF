@@ -558,7 +558,7 @@ export const fetchSentRequests = createAsyncThunk(
   "stock/req/fetchSent",
   async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await AuthService.getStockRequests({ ...params, role: "requester" });
+      const res = await AuthService.getStockRequests({ ...params });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
@@ -566,23 +566,23 @@ export const fetchSentRequests = createAsyncThunk(
   }
 );
 
-export const fetchInboxRequests = createAsyncThunk(
-  "stock/req/fetchInbox",
-  async (params = {}, { rejectWithValue }) => {
-    try {
-      const res = await AuthService.getStockRequestInbox({ ...params, role: "dispatcher" });
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || err.message);
-    }
-  }
-);
+// export const fetchInboxRequests = createAsyncThunk(
+//   "stock/req/fetchInbox",
+//   async (params = {}, { rejectWithValue }) => {
+//     try {
+//       const res = await AuthService.getStockRequestInbox({ ...params });
+//       return res.data;
+//     } catch (err) {
+//       return rejectWithValue(err.response?.data?.message || err.message);
+//     }
+//   }
+// );
 
 export const fetchApprovedRequests = createAsyncThunk(
   "stock/req/fetchApproved",
   async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await AuthService.getStockRequests({ ...params, role: "requester", status: "approved" });
+      const res = await AuthService.getStockRequests({ ...params, status: "approved" });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
@@ -602,17 +602,57 @@ export const fetchStarredRequests = createAsyncThunk(
   }
 );
 
+// export const fetchStockRequestStats = createAsyncThunk(
+//   "stock/req/fetchStats",
+//   async (_, { rejectWithValue }) => {
+//     try {
+//       const res = await AuthService.getStockRequestStats();
+//       return res.data.data;
+//     } catch (err) {
+//       return rejectWithValue(err.response?.data?.message || err.message);
+//     }
+//   }
+// );
+
+
+
 export const fetchStockRequestStats = createAsyncThunk(
   "stock/req/fetchStats",
   async (_, { rejectWithValue }) => {
     try {
+      // Try dedicated stats endpoint first
       const res = await AuthService.getStockRequestStats();
+
       return res.data.data;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message || err.message);
+     
+      console.warn("getStockRequestStats not available, using fallback:", err.message);
+      try {
+        // Derive from list endpoint
+        const listRes = await AuthService.getStockRequests({ page_no: 1, limit: 100 });
+        const items = listRes.data.data || [];
+        const total = listRes.data.total_records || items.length;
+ 
+        // Count by status string from backend
+        const pending  = items.filter((r) =>
+          ["Pending for Approval", "Followed Up for Approval", "Escalated Due to No Approval"]
+            .includes(r.status)
+        ).length;
+        const approved = items.filter((r) =>
+          ["Awaiting Shipment", "Scheduled", "Shipping Deadline Approaching"]
+            .includes(r.status)
+        ).length;
+        const received = items.filter((r) => r.status === "Delivered").length;
+ 
+        return { total, pending, approved, rejected: 0, received };
+      } catch (fallbackErr) {
+        return rejectWithValue(fallbackErr.message);
+      }
     }
   }
 );
+ 
+
 
 export const fetchStockRequestPriorities = createAsyncThunk(
   "stock/req/fetchPriorities",
@@ -966,9 +1006,9 @@ const stockSlice = createSlice({
       .addCase(fetchSentRequests.rejected,  (s, { payload }) => { s.req.sent.loading = false; s.req.sent.error = payload; })
 
     // fetchInboxRequests
-      .addCase(fetchInboxRequests.pending,   (s) => { s.req.inbox.loading = true;   s.req.inbox.error = null; })
-      .addCase(fetchInboxRequests.fulfilled, (s, { payload }) => applyReqList(s, "inbox", payload))
-      .addCase(fetchInboxRequests.rejected,  (s, { payload }) => { s.req.inbox.loading = false; s.req.inbox.error = payload; })
+      // .addCase(fetchInboxRequests.pending,   (s) => { s.req.inbox.loading = true;   s.req.inbox.error = null; })
+      // .addCase(fetchInboxRequests.fulfilled, (s, { payload }) => applyReqList(s, "inbox", payload))
+      // .addCase(fetchInboxRequests.rejected,  (s, { payload }) => { s.req.inbox.loading = false; s.req.inbox.error = payload; })
 
     // fetchApprovedRequests
       .addCase(fetchApprovedRequests.pending,   (s) => { s.req.approved.loading = true; s.req.approved.error = null; })
@@ -981,9 +1021,9 @@ const stockSlice = createSlice({
       .addCase(fetchStarredRequests.rejected,  (s, { payload }) => { s.req.starred.loading = false; s.req.starred.error = payload; })
 
     // fetchStockRequestStats
-      .addCase(fetchStockRequestStats.pending,   (s) => { s.req.statsLoading = true; })
-      .addCase(fetchStockRequestStats.fulfilled, (s, { payload }) => { s.req.stats = payload; s.req.statsLoading = false; })
-      .addCase(fetchStockRequestStats.rejected,  (s) => { s.req.statsLoading = false; })
+      // .addCase(fetchStockRequestStats.pending,   (s) => { s.req.statsLoading = true; })
+      // .addCase(fetchStockRequestStats.fulfilled, (s, { payload }) => { s.req.stats = payload; s.req.statsLoading = false; })
+      // .addCase(fetchStockRequestStats.rejected,  (s) => { s.req.statsLoading = false; })
 
     // fetchStockRequestPriorities
       .addCase(fetchStockRequestPriorities.pending,   (s) => { s.req.prioritiesLoading = true; })

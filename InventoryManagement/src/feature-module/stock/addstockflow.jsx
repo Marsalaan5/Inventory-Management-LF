@@ -2379,9 +2379,9 @@ const AddStockFlow = () => {
   const scanBuffer  = useRef("");
   const lastKeyTime = useRef(0);
 
-  const [excelFile,      setExcelFile]      = useState(null);
-  const [importingExcel, setImportingExcel] = useState(false);
-  const excelInputRef = useRef(null);
+  // const [excelFile,      setExcelFile]      = useState(null);
+  // const [importingExcel, setImportingExcel] = useState(false);
+  // const excelInputRef = useRef(null);
 
   // ── Bill / invoice file (restored) ───────────────────────────────────────
   const [billPreview, setBillPreview] = useState(null);
@@ -2780,72 +2780,72 @@ const AddStockFlow = () => {
   };
 
   // ── Excel import ──────────────────────────────────────────────────────────
-  const handleExcelImport = async () => {
-    if (!excelFile) return;
-    setImportingExcel(true);
-    try {
-      const fd = new FormData();
-      fd.append("excel_file", excelFile);
-      if (formData.to_warehouse)  fd.append("to_wh",         formData.to_warehouse.value);
-      if (effectiveTransport)     fd.append("transportation", effectiveTransport.value);
-      // Always send description as string
-      fd.append("description", typeof formData.description === "string" ? formData.description : "");
+  // const handleExcelImport = async () => {
+  //   if (!excelFile) return;
+  //   setImportingExcel(true);
+  //   try {
+  //     const fd = new FormData();
+  //     fd.append("excel_file", excelFile);
+  //     if (formData.to_warehouse)  fd.append("to_wh",         formData.to_warehouse.value);
+  //     if (effectiveTransport)     fd.append("transportation", effectiveTransport.value);
+  //     // Always send description as string
+  //     fd.append("description", typeof formData.description === "string" ? formData.description : "");
 
-      const res  = await AuthService.importStockFlowFromExcel(fd);
-      const data = res.data;
+  //     const res  = await AuthService.importStockFlowFromExcel(fd);
+  //     const data = res.data;
 
-      if (data.data?.stock_id) setCurrentStockId(data.data.stock_id);
+  //     if (data.data?.stock_id) setCurrentStockId(data.data.stock_id);
 
-      if (!data.data?.draft_saved && data.data?.products?.length) {
-        const localProds = data.data.products.map((p) => ({
-          prod_uuid:            p.prod_uuid,
-          partial_code:         p.partial_code || p.barcode,
-          article_profile_id:   p.article_profile_id,
-          article_profile_name: p.article_profile_name || "—",
-          warehouse_name:       p.warehouse_name || "—",
-          count:                p.count || 1,
-          status:               p.status,
-          quantity_to_transfer: p.count || 1,
-        }));
-        setScanned((prev) => {
-          const existing = new Set(prev.map((x) => x.prod_uuid));
-          return [...prev, ...localProds.filter((x) => !existing.has(x.prod_uuid))];
-        });
-      } else {
-        await restoreDraft();
-      }
+  //     if (!data.data?.draft_saved && data.data?.products?.length) {
+  //       const localProds = data.data.products.map((p) => ({
+  //         prod_uuid:            p.prod_uuid,
+  //         partial_code:         p.partial_code || p.barcode,
+  //         article_profile_id:   p.article_profile_id,
+  //         article_profile_name: p.article_profile_name || "—",
+  //         warehouse_name:       p.warehouse_name || "—",
+  //         count:                p.count || 1,
+  //         status:               p.status,
+  //         quantity_to_transfer: p.count || 1,
+  //       }));
+  //       setScanned((prev) => {
+  //         const existing = new Set(prev.map((x) => x.prod_uuid));
+  //         return [...prev, ...localProds.filter((x) => !existing.has(x.prod_uuid))];
+  //       });
+  //     } else {
+  //       await restoreDraft();
+  //     }
 
-      setExcelFile(null);
-      if (excelInputRef.current) excelInputRef.current.value = "";
+  //     setExcelFile(null);
+  //     if (excelInputRef.current) excelInputRef.current.value = "";
 
-      const errorLines = (data.data?.error_details || [])
-        .map((e) => `<li><code>${e.barcode || e.partial_code}</code>: ${e.error}</li>`)
-        .join("");
+  //     const errorLines = (data.data?.error_details || [])
+  //       .map((e) => `<li><code>${e.barcode || e.partial_code}</code>: ${e.error}</li>`)
+  //       .join("");
 
-      MySwal.fire({
-        icon: data.data?.errors > 0 ? "warning" : "success",
-        title: data.message,
-        html: `
-          <p>Added: <strong>${data.data?.added || 0}</strong></p>
-          <p>Skipped: <strong>${data.data?.skipped || 0}</strong></p>
-          ${data.data?.errors > 0
-            ? `<p>Errors: <strong>${data.data.errors}</strong></p><ul class="text-start">${errorLines}</ul>`
-            : ""}
-          ${!data.data?.draft_saved
-            ? `<p class="text-warning mt-2 small">Select To Warehouse to persist draft.</p>`
-            : ""}
-        `,
-      });
-    } catch (err) {
-      MySwal.fire({
-        icon: "error",
-        title: "Import Failed",
-        text: err.response?.data?.message || "Import failed.",
-      });
-    } finally {
-      setImportingExcel(false);
-    }
-  };
+  //     MySwal.fire({
+  //       icon: data.data?.errors > 0 ? "warning" : "success",
+  //       title: data.message,
+  //       html: `
+  //         <p>Added: <strong>${data.data?.added || 0}</strong></p>
+  //         <p>Skipped: <strong>${data.data?.skipped || 0}</strong></p>
+  //         ${data.data?.errors > 0
+  //           ? `<p>Errors: <strong>${data.data.errors}</strong></p><ul class="text-start">${errorLines}</ul>`
+  //           : ""}
+  //         ${!data.data?.draft_saved
+  //           ? `<p class="text-warning mt-2 small">Select To Warehouse to persist draft.</p>`
+  //           : ""}
+  //       `,
+  //     });
+  //   } catch (err) {
+  //     MySwal.fire({
+  //       icon: "error",
+  //       title: "Import Failed",
+  //       text: err.response?.data?.message || "Import failed.",
+  //     });
+  //   } finally {
+  //     setImportingExcel(false);
+  //   }
+  // };
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
@@ -3224,7 +3224,7 @@ const AddStockFlow = () => {
         </div>
 
         {/* ── Excel Import ── */}
-        <div className="card mb-3">
+        {/* <div className="card mb-3">
           <div className="card-body">
             <div className="d-flex align-items-center mb-3">
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
@@ -3286,7 +3286,7 @@ const AddStockFlow = () => {
               </small>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* ── Scanned Products Table ── */}
         {scannedProducts.length > 0 && (

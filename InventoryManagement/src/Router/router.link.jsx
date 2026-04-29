@@ -201,6 +201,7 @@ import StockFlowDetails from "../feature-module/stock/stockflowdetails";
 import LotUploadInBulk from "../feature-module/inventory/lotuploadproduct";
 import StockRequest from "../feature-module/stock/stockrequest";
 import AddNewStockRequest from "../feature-module/stock/addnewstockrequest";
+import StockRequestDetails from "../feature-module/stock/stockrequestdetails";
 
 
 
@@ -1137,7 +1138,7 @@ export const publicRoutes = [
   {
     id: 120,
     path: routes.stockflowdetails,
-    name: "stockflowdeatils",
+    name: "stockflowdeatails",
     element: <StockFlowDetails/>,
     route: Route,
   },
@@ -1150,6 +1151,13 @@ export const publicRoutes = [
   },
   {
     id: 122,
+    path: routes.stockrequestdetails,
+    name: "stockrequestdetails",
+    element: <StockRequestDetails/>,
+    route: Route,
+  },
+  {
+    id: 123,
     path: routes.lotproduct,
     name: "bulkupload",
     element: <LotUploadInBulk/>,
