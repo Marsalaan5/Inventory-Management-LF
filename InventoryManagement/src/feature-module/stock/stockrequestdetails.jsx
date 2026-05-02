@@ -1,22 +1,14 @@
+
+
 // import PropTypes from "prop-types";
 // import React, { useState, useEffect, useCallback } from "react";
 // import { Link, useParams, useNavigate } from "react-router-dom";
 // import Swal from "sweetalert2";
 // import withReactContent from "sweetalert2-react-content";
 // import {
-//   ArrowLeft,
-//   Package,
-//   Truck,
-//   MapPin,
-//   Calendar,
-//   User,
-//   FileText,
-//   CheckCircle,
-//   Clock,
-//   AlertCircle,
-//   Send,
-//   ThumbsUp,
-//   Mail,
+//   ArrowLeft, Package, Truck, MapPin, Calendar,
+//   User, FileText, CheckCircle, Clock, AlertCircle,
+//   Send, ThumbsUp, Mail,
 // } from "feather-icons-react/build/IconComponents";
 // import AuthService from "../../services/authService";
 
@@ -32,19 +24,20 @@
 //   low:      { color: "#198754", badge: "badge-linesuccess", label: "Low"      },
 // };
 
+// // Exact status strings returned by get_stock_requests / get_stock_request_by_id backend
 // const STATUS_CFG = {
-//   "Pending for Approval":         { badge: "badge-linewarning", alertVariant: "warning",   icon: "clock"    },
-//   "Followed Up for Approval":     { badge: "badge-lineinfo",    alertVariant: "info",      icon: "clock"    },
-//   "Escalated Due to No Approval": { badge: "badge-linedanger",  alertVariant: "danger",    icon: "alert"    },
-//   "Awaiting Shipment":            { badge: "badge-lineinfo",    alertVariant: "info",      icon: "truck"    },
-//   "Scheduled":                    { badge: "badge-linesuccess", alertVariant: "success",   icon: "check"    },
-//   "Shipping Deadline Approaching":{ badge: "badge-linedanger",  alertVariant: "danger",    icon: "alert"    },
-//   "Delivered":                    { badge: "badge-linesuccess", alertVariant: "success",   icon: "check"    },
-//   "Resolution required":          { badge: "badge-linedanger",  alertVariant: "danger",    icon: "alert"    },
+//   "Pending for Approval":           { badge: "badge-linewarning", alertVariant: "warning", icon: "clock"  },
+//   "Followed Up for Approval":       { badge: "badge-lineinfo",    alertVariant: "info",    icon: "clock"  },
+//   "Escalated Due to No Approval":   { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert"  },
+//   "Awaiting Shipment":              { badge: "badge-lineinfo",    alertVariant: "info",    icon: "truck"  },
+//   "Scheduled":                      { badge: "badge-linesuccess", alertVariant: "success", icon: "check"  },
+//   "Shipping Deadline Approaching":  { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert"  },
+//   "Delivered":                      { badge: "badge-linesuccess", alertVariant: "success", icon: "check"  },
+//   "Resolution required":            { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert"  },
 // };
 
 // const getPriorityCfg = (key) =>
-//   PRIORITY_CFG[key?.toLowerCase()] ||
+//   PRIORITY_CFG[(key || "").toLowerCase()] ||
 //   { color: "#6c757d", badge: "badge-secondary", label: key || "—" };
 
 // const getStatusCfg = (key) =>
@@ -69,7 +62,6 @@
 //   if (icon === "alert") return <AlertCircle size={size} />;
 //   return <Clock size={size} />;
 // };
-
 // StatusIcon.propTypes = { icon: PropTypes.string, size: PropTypes.number };
 
 // // ─────────────────────────────────────────────────────────────
@@ -80,26 +72,29 @@
 //   const { id }   = useParams();
 //   const navigate = useNavigate();
 
-//   const [request,        setRequest]        = useState(null);
-//   const [articles,       setArticles]       = useState([]);
-//   const [loading,        setLoading]        = useState(true);
-//   const [actionLoading,  setActionLoading]  = useState(false);
+//   const [request,       setRequest]       = useState(null);
+//   const [articles,      setArticles]      = useState([]);
+//   const [loading,       setLoading]       = useState(true);
+//   const [actionLoading, setActionLoading] = useState(false);
 
-//   // ── Fetch ──────────────────────────────────────────────────
+
 //   const fetchDetails = useCallback(async () => {
 //     try {
 //       setLoading(true);
-//       const res      = await AuthService.getStockRequestById(id);
-//       const artRes   = await AuthService.getStockRequestArticles(id);
-//       setRequest(res.data.data);
-//       console.log("BY ID", res.data.data)
-//       setArticles(artRes.data.data || []);
+//       const res = await AuthService.getStockRequestById(id);
+//       const data = res.data.data;
+
+//       setRequest(data);
+
+
+//       setArticles(Array.isArray(data.requested_articles) ? data.requested_articles : []);
 //     } catch (err) {
 //       console.error("fetchDetails:", err);
 //       MySwal.fire({
-//         icon: "error", title: "Error",
-//         text: "Failed to load stock request details",
-//         timer: 2000,
+//         icon: "error",
+//         title: "Error",
+//         text: err.response?.data?.message || "Failed to load stock request details",
+//         timer: 2500,
 //       }).then(() => navigate("/stock-request"));
 //     } finally {
 //       setLoading(false);
@@ -110,67 +105,135 @@
 //     fetchDetails();
 //   }, [fetchDetails]);
 
-//   // ── Approve (Dispatcher action) ───────────────────────────
+
+//   const deriveStatus = (req) => {
+//     if (!req) return "—";
+//     const isRecipient = req.is_recipient;
+
+//     if (req.delivered_at !== null && req.grn_timestamp !== null) return "Delivered";
+//     if (req.delivered_at !== null && req.grn_timestamp === null) return "Delivered";
+
+//     if (req.resolution_required_at !== null) return "Resolution required";
+//     if (req.approved_at !== null && req.stock_id === null && req.deadline_notice_at !== null)
+//       return "Shipping Deadline Approaching";
+
+//     if (req.approved_at !== null && req.stock_id === null)
+//       return isRecipient ? "Awaiting Shipment" : "Scheduled";
+
+//     if (req.approved_at !== null && req.stock_id !== null)
+//       return isRecipient ? "Awaiting Shipment" : "Scheduled";
+
+//     if (req.approved_at === null && req.escalation_enabled && req.escalated_at !== null)
+//       return "Escalated Due to No Approval";
+
+//     if (req.approved_at === null && req.follow_up_enabled && req.follow_up_sent_at !== null)
+//       return "Followed Up for Approval";
+
+//     return "Pending for Approval";
+//   };
+
+
 //   const handleApprove = async () => {
-//     const result = await MySwal.fire({
-//       title:              "Approve this request?",
-//       text:               "The requester will be notified and the stock will be scheduled for dispatch.",
-//       icon:               "question",
-//       showCancelButton:   true,
-//       confirmButtonText:  "Yes, Approve",
+//     const { value: totalDays, isConfirmed } = await MySwal.fire({
+//       title: "Approve Stock Request",
+//       html: `
+//         <p class="text-muted small mb-3">
+//           Enter the number of days until scheduled dispatch.
+//         </p>
+//         <div class="d-flex align-items-center justify-content-center gap-2">
+//           <label class="form-label mb-0 fw-semibold">Dispatch in</label>
+//           <input
+//             id="swal-days"
+//             type="number"
+//             class="swal2-input"
+//             placeholder="e.g. 3"
+//             min="1"
+//             max="50"
+//             value="3"
+//             style="width: 100px; margin: 0;"
+//           />
+//           <span class="fw-semibold">days</span>
+//         </div>
+//       `,
+//       icon: "question",
+//       showCancelButton: true,
+//       confirmButtonText: "Approve",
 //       confirmButtonColor: "#198754",
-//       cancelButtonText:   "Cancel",
+//       cancelButtonText: "Cancel",
+//       preConfirm: () => {
+//         const val = parseInt(document.getElementById("swal-days")?.value);
+//         if (!val || val < 1 || val > 50) {
+//           Swal.showValidationMessage("Enter a number between 1 and 50");
+//           return false;
+//         }
+//         return val;
+//       },
 //     });
 
-//     if (!result.isConfirmed) return;
-
+//     if (!isConfirmed) return;
+// // 
 //     setActionLoading(true);
 //     try {
-//       await AuthService.approveStockRequest(id);
+//       await AuthService.approveStockRequest(id, { total_days: totalDays });
 //       MySwal.fire({
-//         icon: "success", title: "Approved!",
-//         text: "Stock request has been approved successfully.",
-//         timer: 2000, showConfirmButton: false,
+//         icon: "success",
+//         title: "Approved!",
+//         text: `Request approved. Scheduled dispatch in ${totalDays} day(s).`,
+//         timer: 2500,
+//         showConfirmButton: false,
 //       });
 //       fetchDetails();
 //     } catch (err) {
 //       console.error("approveStockRequest:", err);
-//       MySwal.fire({ icon: "error", title: "Error", text: "Failed to approve request." });
+//       MySwal.fire({
+//         icon: "error",
+//         title: "Error",
+//         text: err.response?.data?.message || "Failed to approve request.",
+//       });
 //     } finally {
 //       setActionLoading(false);
 //     }
 //   };
 
-//   // ── Mark as Received (Requester action) ───────────────────
+
 //   const handleMarkReceived = async () => {
-//     const { value: remarks, isConfirmed } = await MySwal.fire({
-//       title:             "Mark as Received",
+//     const { isConfirmed } = await MySwal.fire({
+//       title: "Confirm Stock Receipt",
 //       html: `
-//         <p class="text-muted small mb-3">Confirm that the stock has been physically received at your warehouse.</p>
-//         <textarea id="swal-remarks" class="swal2-textarea" placeholder="Optional: add any remarks or notes about the delivery…" rows="3" style="width:100%"></textarea>
+//         <p class="text-muted small mb-2">
+//           Confirm that the stock has been physically received at your warehouse.
+//         </p>
+//         <div class="alert alert-info py-2 small mb-0">
+//           This action cannot be undone. Make sure all items have arrived before confirming.
+//         </div>
 //       `,
-//       icon:              "info",
-//       showCancelButton:  true,
+//       icon: "info",
+//       showCancelButton: true,
 //       confirmButtonText: "Confirm Receipt",
 //       confirmButtonColor: "#0d6efd",
-//       cancelButtonText:  "Cancel",
-//       preConfirm: () => document.getElementById("swal-remarks")?.value || "",
+//       cancelButtonText: "Cancel",
 //     });
 
 //     if (!isConfirmed) return;
 
 //     setActionLoading(true);
 //     try {
-//       await AuthService.markStockRequestReceived(id, { remarks });
+//       await AuthService.markStockRequestReceived(id);
 //       MySwal.fire({
-//         icon: "success", title: "Marked as Received!",
-//         text: "Stock request is now marked as delivered.",
-//         timer: 2000, showConfirmButton: false,
+//         icon: "success",
+//         title: "Received!",
+//         text: "Stock delivery confirmed successfully.",
+//         timer: 2500,
+//         showConfirmButton: false,
 //       });
 //       fetchDetails();
 //     } catch (err) {
 //       console.error("markStockRequestReceived:", err);
-//       MySwal.fire({ icon: "error", title: "Error", text: "Failed to mark as received." });
+//       MySwal.fire({
+//         icon: "error",
+//         title: "Error",
+//         text: err.response?.data?.message || "Failed to confirm delivery.",
+//       });
 //     } finally {
 //       setActionLoading(false);
 //     }
@@ -183,7 +246,10 @@
 //   if (loading) {
 //     return (
 //       <div className="page-wrapper">
-//         <div className="content d-flex justify-content-center align-items-center" style={{ minHeight: 400 }}>
+//         <div
+//           className="content d-flex justify-content-center align-items-center"
+//           style={{ minHeight: 400 }}
+//         >
 //           <div className="text-center">
 //             <div className="spinner-border text-primary mb-3" />
 //             <p>Loading stock request details…</p>
@@ -198,6 +264,9 @@
 //       <div className="page-wrapper">
 //         <div className="content">
 //           <div className="alert alert-danger">Stock request not found.</div>
+//           <Link to="/stock-request" className="btn btn-secondary">
+//             <ArrowLeft size={16} className="me-2" />Back
+//           </Link>
 //         </div>
 //       </div>
 //     );
@@ -207,24 +276,38 @@
 //   //  Derived state
 //   // ─────────────────────────────────────────────────────────────
 
-//   const statusCfg     = getStatusCfg(request.status);
-//   const priorityCfg   = getPriorityCfg(request.priority);
+//   const computedStatus = deriveStatus(request);
+//   const statusCfg      = getStatusCfg(computedStatus);
+//   const priorityCfg    = getPriorityCfg(request.priority);
 
-//   // Role detection — adjust field names to match your API response
-//   const isDispatcher  = request.user_role === "dispatcher";  // user is the one who will dispatch
-//   const isRequester   = request.user_role === "requester";   // user who created the request
 
-//   // Determine which action buttons to show
-//   // Dispatcher can approve when status is pending-like
-//   const canApprove    = isDispatcher &&
-//     ["Pending for Approval", "Followed Up for Approval", "Escalated Due to No Approval"]
-//       .includes(request.status);
+//   const isSupplier  = request.is_supplier;
+//   const isRecipient = request.is_recipient;
 
-//   // Requester can mark received when status is Awaiting Shipment / Scheduled
-//   const canReceive    = isRequester &&
-//     ["Awaiting Shipment", "Scheduled"].includes(request.status);
 
-//   const totalQty      = articles.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+//   const canApprove =
+//     isSupplier &&
+//     ["Pending for Approval", "Followed Up for Approval", "Escalated Due to No Approval"].includes(
+//       computedStatus
+//     );
+
+ 
+//   const canReceive =
+//     isRecipient &&
+//     request.stock_id !== null && 
+//     request.delivered_at === null;
+
+//   const totalQty = articles.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
+
+
+//   const ccEmails = Array.isArray(request.cc_recipients)
+//     ? request.cc_recipients
+//     : typeof request.cc_recipients === "string"
+//     ? (() => {
+//         try { return JSON.parse(request.cc_recipients); }
+//         catch { return request.cc_recipients.split(",").map((e) => e.trim()); }
+//       })()
+//     : [];
 
 //   // ─────────────────────────────────────────────────────────────
 //   //  Render
@@ -244,7 +327,7 @@
 //           </div>
 //           <div className="page-btn d-flex gap-2 flex-wrap">
 
-//             {/* Dispatcher: Approve button */}
+//             {/* Supplier (Dispatcher): Approve button */}
 //             {canApprove && (
 //               <button
 //                 className="btn btn-success"
@@ -260,7 +343,7 @@
 //               </button>
 //             )}
 
-//             {/* Requester: Mark as Received button */}
+//             {/* Recipient (Requester): Confirm Delivery button */}
 //             {canReceive && (
 //               <button
 //                 className="btn btn-primary"
@@ -272,7 +355,7 @@
 //                 ) : (
 //                   <CheckCircle size={16} className="me-2" />
 //                 )}
-//                 Mark as Received
+//                 Confirm Delivery
 //               </button>
 //             )}
 
@@ -288,19 +371,31 @@
 //           <div className="ms-3">
 //             <h5 className="mb-1">
 //               <span style={{ fontFamily: "monospace" }}>{request.req_id}</span>
-//               <span className={`badge ${statusCfg.badge} ms-2`}>
-//                 {request.status || "—"}
-//               </span>
-//               {/* Priority pill */}
+//               <span className={`badge ${statusCfg.badge} ms-2`}>{computedStatus}</span>
 //               <span className={`badge ${priorityCfg.badge} ms-2`} style={{ fontSize: 11 }}>
 //                 {priorityCfg.label} Priority
 //               </span>
+//               {request.stock_id && (
+//                 <span className="badge badge-primary ms-2" style={{ fontSize: 11 }}>
+//                   Stock: {request.stock_id}
+//                 </span>
+//               )}
 //             </h5>
-//             <p className="mb-0 small text-muted">
-//               Created {fmtDate(request.created_at)}
-//             </p>
+//             <p className="mb-0 small text-muted">Created {fmtDate(request.created_at)}</p>
 //           </div>
 //         </div>
+
+//         {/* ── Role indicator ── */}
+//         {(isRecipient || isSupplier) && (
+//           <div className="alert alert-light py-2 mb-3 d-flex align-items-center gap-2">
+//             <User size={15} />
+//             <span className="small">
+//               You are the{" "}
+//               <strong>{isRecipient ? "Recipient" : "Supplier"}</strong>
+//               {" "}on this request.
+//             </span>
+//           </div>
+//         )}
 
 //         {/* ── Info row ── */}
 //         <div className="row">
@@ -313,11 +408,12 @@
 //                   <MapPin size={18} className="me-2" />Route
 //                 </h5>
 
-//                 <label className="form-label text-muted small">Requested By (From)</label>
+//                 <label className="form-label text-muted small">Requested By (Recipient)</label>
 //                 <div className="alert alert-light mb-3 py-2 d-flex align-items-center gap-2">
 //                   <User size={16} className="text-danger flex-shrink-0" />
 //                   <div>
-//                     <strong>{request.requester_name || "—"}</strong>
+//                     {/* Backend fields: recipient_name, destination */}
+//                     <strong>{request.recipient_name || "—"}</strong>
 //                     <div className="text-muted small">{request.destination || "—"}</div>
 //                   </div>
 //                 </div>
@@ -326,11 +422,12 @@
 //                   <Send size={20} className="text-primary" />
 //                 </div>
 
-//                 <label className="form-label text-muted small">Dispatched By (To)</label>
+//                 <label className="form-label text-muted small">Dispatched By (Supplier)</label>
 //                 <div className="alert alert-light mb-0 py-2 d-flex align-items-center gap-2">
 //                   <Truck size={16} className="text-success flex-shrink-0" />
 //                   <div>
-//                     <strong>{request.dispatcher_name || "—"}</strong>
+//                     {/* Backend fields: supplier_name, source */}
+//                     <strong>{request.supplier_name || "—"}</strong>
 //                     <div className="text-muted small">{request.source || "—"}</div>
 //                   </div>
 //                 </div>
@@ -349,15 +446,11 @@
 //                 <div className="row mb-3">
 //                   <div className="col-6">
 //                     <p className="text-muted small mb-1">Priority</p>
-//                     <span className={`badge ${priorityCfg.badge}`}>
-//                       {priorityCfg.label}
-//                     </span>
+//                     <span className={`badge ${priorityCfg.badge}`}>{priorityCfg.label}</span>
 //                   </div>
 //                   <div className="col-6">
 //                     <p className="text-muted small mb-1">Status</p>
-//                     <span className={`badge ${statusCfg.badge}`}>
-//                       {request.status || "—"}
-//                     </span>
+//                     <span className={`badge ${statusCfg.badge}`}>{computedStatus}</span>
 //                   </div>
 //                 </div>
 
@@ -372,29 +465,66 @@
 //                   </div>
 //                 </div>
 
-//                 {/* CC emails */}
-//                 {request.cc_emails && request.cc_emails.length > 0 && (
+//                 {/* Scheduled dispatch */}
+//                 {request.scheduled_dispatch && (
 //                   <div className="mb-3">
 //                     <p className="text-muted small mb-1">
-//                       <Mail size={13} className="me-1" />CC Emails
+//                       <Calendar size={13} className="me-1" />Scheduled Dispatch
+//                     </p>
+//                     <strong>{fmtDate(request.scheduled_dispatch)}</strong>
+//                   </div>
+//                 )}
+
+//                 {/* Automation flags */}
+//                 <div className="row mb-3">
+//                   {request.follow_up_enabled !== undefined && (
+//                     <div className="col-6">
+//                       <p className="text-muted small mb-1">Follow-up</p>
+//                       <span className={`badge ${request.follow_up_enabled ? "badge-linesuccess" : "badge-secondary"}`}>
+//                         {request.follow_up_enabled ? `${request.follow_up_days}d` : "Off"}
+//                       </span>
+//                       {request.follow_up_sent_at && (
+//                         <div className="text-muted" style={{ fontSize: 11 }}>
+//                           Sent {fmtDate(request.follow_up_sent_at)}
+//                         </div>
+//                       )}
+//                     </div>
+//                   )}
+//                   {request.escalation_enabled !== undefined && (
+//                     <div className="col-6">
+//                       <p className="text-muted small mb-1">Escalation</p>
+//                       <span className={`badge ${request.escalation_enabled ? "badge-linewarning" : "badge-secondary"}`}>
+//                         {request.escalation_enabled ? `${request.escalation_days}d` : "Off"}
+//                       </span>
+//                       {request.escalated_at && (
+//                         <div className="text-muted" style={{ fontSize: 11 }}>
+//                           Escalated {fmtDate(request.escalated_at)}
+//                         </div>
+//                       )}
+//                     </div>
+//                   )}
+//                 </div>
+
+//                 {/* CC emails */}
+//                 {ccEmails.length > 0 && (
+//                   <div className="mb-3">
+//                     <p className="text-muted small mb-1">
+//                       <Mail size={13} className="me-1" />CC Recipients
 //                     </p>
 //                     <div className="d-flex gap-1 flex-wrap">
-//                       {(Array.isArray(request.cc_emails)
-//                         ? request.cc_emails
-//                         : request.cc_emails.split(",")
-//                       ).map((email) => (
-//                         <span key={email.trim()} className="badge badge-lineinfo" style={{ fontSize: 11 }}>
-//                           {email.trim()}
+//                       {ccEmails.map((email) => (
+//                         <span key={email} className="badge badge-lineinfo" style={{textTransform:"none" , fontSize: 11 }}>
+//                           {email}
 //                         </span>
 //                       ))}
 //                     </div>
 //                   </div>
 //                 )}
 
-//                 {request.notes && (
+//                 {request.description && (
 //                   <div>
-//                     <p className="text-muted small mb-1">Notes / Remarks</p>
-//                     <p className="mb-0">{request.notes}</p>
+//                     <p className="text-muted small mb-1">Description / Notes</p>
+//                     <p className="mb-0">{request.description}</p>
 //                   </div>
 //                 )}
 //               </div>
@@ -402,42 +532,8 @@
 //           </div>
 //         </div>
 
-//         {/* ── Delivery confirmation (shown after received) ── */}
-//         {request.status === "Delivered" && request.received_by && (
-//           <div className="card mb-4">
-//             <div className="card-body">
-//               <h5 className="mb-4">
-//                 <CheckCircle size={18} className="me-2 text-success" />
-//                 Delivery Confirmation
-//               </h5>
-//               <div className="row">
-//                 <div className="col-md-4 mb-3">
-//                   <p className="text-muted small mb-1">Received By</p>
-//                   <p className="mb-0">
-//                     <User size={14} className="me-1" />
-//                     <strong>{request.received_by}</strong>
-//                   </p>
-//                 </div>
-//                 <div className="col-md-4 mb-3">
-//                   <p className="text-muted small mb-1">Received Date</p>
-//                   <p className="mb-0">
-//                     <Calendar size={14} className="me-1" />
-//                     {fmtDate(request.received_at || request.updated_at)}
-//                   </p>
-//                 </div>
-//                 {request.receive_remarks && (
-//                   <div className="col-12">
-//                     <p className="text-muted small mb-1">Remarks</p>
-//                     <p className="mb-0">{request.receive_remarks}</p>
-//                   </div>
-//                 )}
-//               </div>
-//             </div>
-//           </div>
-//         )}
-
-//         {/* ── Approval info (shown after approved) ── */}
-//         {request.approved_by && (
+//         {/* ── Approval info ── */}
+//         {request.approved_at && (
 //           <div className="card mb-4">
 //             <div className="card-body">
 //               <h5 className="mb-4">
@@ -446,25 +542,66 @@
 //               </h5>
 //               <div className="row">
 //                 <div className="col-md-4 mb-3">
-//                   <p className="text-muted small mb-1">Approved By</p>
-//                   <p className="mb-0">
-//                     <User size={14} className="me-1" />
-//                     <strong>{request.approved_by}</strong>
-//                   </p>
-//                 </div>
-//                 <div className="col-md-4 mb-3">
 //                   <p className="text-muted small mb-1">Approved At</p>
 //                   <p className="mb-0">
 //                     <Calendar size={14} className="me-1" />
 //                     {fmtDate(request.approved_at)}
 //                   </p>
 //                 </div>
+//                 {request.scheduled_dispatch && (
+//                   <div className="col-md-4 mb-3">
+//                     <p className="text-muted small mb-1">Scheduled Dispatch</p>
+//                     <p className="mb-0">
+//                       <Truck size={14} className="me-1" />
+//                       {fmtDate(request.scheduled_dispatch)}
+//                     </p>
+//                   </div>
+//                 )}
+//                 {request.stock_id && (
+//                   <div className="col-md-4 mb-3">
+//                     <p className="text-muted small mb-1">Linked Stock Flow</p>
+//                     <span className="badge badge-primary" style={{ fontFamily: "monospace" }}>
+//                       {request.stock_id}
+//                     </span>
+//                   </div>
+//                 )}
+//               </div>
+//             </div>
+//           </div>
+//         )}
+
+//         {/* ── Delivery confirmation ── */}
+//         {request.delivered_at && (
+//           <div className="card mb-4">
+//             <div className="card-body">
+//               <h5 className="mb-4">
+//                 <CheckCircle size={18} className="me-2 text-success" />
+//                 Delivery Confirmation
+//               </h5>
+//               <div className="row">
+//                 <div className="col-md-4 mb-3">
+//                   <p className="text-muted small mb-1">Delivered At</p>
+//                   <p className="mb-0">
+//                     <Calendar size={14} className="me-1" />
+//                     {fmtDate(request.delivered_at)}
+//                   </p>
+//                 </div>
+//                 {request.grn_timestamp && (
+//                   <div className="col-md-4 mb-3">
+//                     <p className="text-muted small mb-1">GRN Timestamp</p>
+//                     <p className="mb-0">
+//                       <Calendar size={14} className="me-1" />
+//                       {fmtDate(request.grn_timestamp)}
+//                     </p>
+//                   </div>
+//                 )}
 //               </div>
 //             </div>
 //           </div>
 //         )}
 
 //         {/* ── Articles table ── */}
+//         {/* requested_articles: [{ article_profile_id, article_profile_name, quantity }] */}
 //         <div className="card mb-4">
 //           <div className="card-body">
 //             <div className="d-flex align-items-center justify-content-between mb-3">
@@ -489,37 +626,35 @@
 //                     <tr>
 //                       <th style={{ width: 40 }}>#</th>
 //                       <th>Article</th>
-//                       <th>Code</th>
+//                       {/* <th>Article ID</th> */}
 //                       <th>Quantity Requested</th>
-//                       <th>Unit</th>
-//                       <th>Notes</th>
 //                     </tr>
 //                   </thead>
 //                   <tbody>
 //                     {articles.map((art, i) => (
-//                       <tr key={art.article_id || i}>
+//                       <tr key={art.article_profile_id || i}>
 //                         <td className="text-muted small">{i + 1}</td>
 //                         <td>
-//                           <div className="fw-semibold">{art.article_name || art.name || "—"}</div>
-//                           {art.article_profile_name && (
-//                             <div className="text-muted" style={{ fontSize: 11 }}>{art.article_profile_name}</div>
-//                           )}
+//                           <div className="fw-semibold">
+//                             {art.article_profile_name || art.article_name || art.name || "—"}
+//                           </div>
 //                         </td>
-//                         <td>
-//                           {art.article_code || art.code ? (
-//                             <span className="badge badge-primary" style={{ fontFamily: "monospace" }}>
-//                               {art.article_code || art.code}
+//                         {/* <td>
+//                           {art.article_profile_id ? (
+//                             <span
+//                               className="badge badge-primary"
+//                               style={{ fontFamily: "monospace", fontSize: 10 }}
+//                             >
+//                               {art.article_profile_id.slice(0, 8)}…
 //                             </span>
 //                           ) : "—"}
-//                         </td>
+//                         </td> */}
 //                         <td>
 //                           <span className="badge badge-info">
 //                             <Package size={12} className="me-1" />
 //                             {art.quantity ?? "—"}
 //                           </span>
 //                         </td>
-//                         <td className="text-muted small">{art.unit || "—"}</td>
-//                         <td className="text-muted small">{art.notes || "—"}</td>
 //                       </tr>
 //                     ))}
 //                   </tbody>
@@ -549,14 +684,50 @@
 //                 <div>
 //                   <h6 className="mb-1">Request Created</h6>
 //                   <p className="text-muted mb-0 small">
-//                     Submitted by {request.requester_name || "requester"}
+//                     Submitted by {request.recipient_name || "requester"}
 //                     {request.created_at ? ` · ${fmtDate(request.created_at)}` : ""}
 //                   </p>
 //                 </div>
 //               </div>
 
+//               {/* Follow-up sent */}
+//               {request.follow_up_sent_at && (
+//                 <div className="timeline-item d-flex align-items-start mb-3">
+//                   <div
+//                     className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-info text-white flex-shrink-0"
+//                     style={{ width: 32, height: 32 }}
+//                   >
+//                     <Mail size={14} />
+//                   </div>
+//                   <div>
+//                     <h6 className="mb-1">Follow-up Sent</h6>
+//                     <p className="text-muted mb-0 small">
+//                       Automatic follow-up reminder sent · {fmtDate(request.follow_up_sent_at)}
+//                     </p>
+//                   </div>
+//                 </div>
+//               )}
+
+//               {/* Escalated */}
+//               {request.escalated_at && (
+//                 <div className="timeline-item d-flex align-items-start mb-3">
+//                   <div
+//                     className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-danger text-white flex-shrink-0"
+//                     style={{ width: 32, height: 32 }}
+//                   >
+//                     <AlertCircle size={14} />
+//                   </div>
+//                   <div>
+//                     <h6 className="mb-1">Escalated</h6>
+//                     <p className="text-muted mb-0 small">
+//                       Request escalated due to no response · {fmtDate(request.escalated_at)}
+//                     </p>
+//                   </div>
+//                 </div>
+//               )}
+
 //               {/* Approved */}
-//               {request.approved_by && (
+//               {request.approved_at && (
 //                 <div className="timeline-item d-flex align-items-start mb-3">
 //                   <div
 //                     className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-success text-white flex-shrink-0"
@@ -567,15 +738,18 @@
 //                   <div>
 //                     <h6 className="mb-1">Approved</h6>
 //                     <p className="text-muted mb-0 small">
-//                       Approved by {request.approved_by}
-//                       {request.approved_at ? ` · ${fmtDate(request.approved_at)}` : ""}
+//                       Approved by {request.supplier_name || "supplier"}
+//                       {" · "}{fmtDate(request.approved_at)}
+//                       {request.scheduled_dispatch
+//                         ? ` · Dispatch by ${fmtDate(request.scheduled_dispatch)}`
+//                         : ""}
 //                     </p>
 //                   </div>
 //                 </div>
 //               )}
 
-//               {/* Awaiting / Scheduled */}
-//               {["Awaiting Shipment", "Scheduled"].includes(request.status) && (
+//               {/* Linked to StockFlow */}
+//               {request.stock_id && (
 //                 <div className="timeline-item d-flex align-items-start mb-3">
 //                   <div
 //                     className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-warning text-white flex-shrink-0"
@@ -584,16 +758,19 @@
 //                     <Truck size={14} />
 //                   </div>
 //                   <div>
-//                     <h6 className="mb-1">{request.status}</h6>
+//                     <h6 className="mb-1">Stock Flow Created</h6>
 //                     <p className="text-muted mb-0 small">
-//                       Stock is being prepared for shipment
+//                       Linked to stock flow{" "}
+//                       <span className="badge badge-primary" style={{ fontFamily: "monospace" }}>
+//                         {request.stock_id}
+//                       </span>
 //                     </p>
 //                   </div>
 //                 </div>
 //               )}
 
 //               {/* Delivered */}
-//               {request.status === "Delivered" ? (
+//               {request.delivered_at ? (
 //                 <div className="timeline-item d-flex align-items-start mb-3">
 //                   <div
 //                     className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-success text-white flex-shrink-0"
@@ -604,14 +781,8 @@
 //                   <div>
 //                     <h6 className="mb-1">Delivered</h6>
 //                     <p className="text-muted mb-0 small">
-//                       {request.received_by
-//                         ? `Received by ${request.received_by}`
-//                         : "Delivery confirmed"}
-//                       {request.received_at
-//                         ? ` · ${fmtDate(request.received_at)}`
-//                         : request.updated_at
-//                         ? ` · ${fmtDate(request.updated_at)}`
-//                         : ""}
+//                       Delivery confirmed by {request.recipient_name || "recipients"}
+//                       {" · "}{fmtDate(request.delivered_at)}
 //                     </p>
 //                   </div>
 //                 </div>
@@ -626,12 +797,13 @@
 //                   <div>
 //                     <h6 className="mb-1 text-muted">Awaiting Delivery</h6>
 //                     <p className="text-muted mb-0 small">
-//                       Pending confirmation from requester
+//                       Pending confirmation from recipients
 //                     </p>
 //                   </div>
 //                 </div>
 //               )}
 //             </div>
+
 //           </div>
 //         </div>
 
@@ -669,14 +841,13 @@ const PRIORITY_CFG = {
   low:      { color: "#198754", badge: "badge-linesuccess", label: "Low"      },
 };
 
-// Exact status strings returned by get_stock_requests / get_stock_request_by_id backend
 const STATUS_CFG = {
   "Pending for Approval":           { badge: "badge-linewarning", alertVariant: "warning", icon: "clock"  },
   "Followed Up for Approval":       { badge: "badge-lineinfo",    alertVariant: "info",    icon: "clock"  },
   "Escalated Due to No Approval":   { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert"  },
-  "Awaiting Shipment":              { badge: "badge-lineinfo",    alertVariant: "info",    icon: "truck"  },
   "Scheduled":                      { badge: "badge-linesuccess", alertVariant: "success", icon: "check"  },
   "Shipping Deadline Approaching":  { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert"  },
+  "In Transit":                     { badge: "badge-lineinfo",    alertVariant: "info",    icon: "truck"  },
   "Delivered":                      { badge: "badge-linesuccess", alertVariant: "success", icon: "check"  },
   "Resolution required":            { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert"  },
 };
@@ -722,22 +893,17 @@ const StockRequestDetails = () => {
   const [loading,       setLoading]       = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-
   const fetchDetails = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await AuthService.getStockRequestById(id);
+      const res  = await AuthService.getStockRequestById(id);
       const data = res.data.data;
-
       setRequest(data);
-
-
       setArticles(Array.isArray(data.requested_articles) ? data.requested_articles : []);
     } catch (err) {
       console.error("fetchDetails:", err);
       MySwal.fire({
-        icon: "error",
-        title: "Error",
+        icon: "error", title: "Error",
         text: err.response?.data?.message || "Failed to load stock request details",
         timer: 2500,
       }).then(() => navigate("/stock-request"));
@@ -746,37 +912,58 @@ const StockRequestDetails = () => {
     }
   }, [id, navigate]);
 
-  useEffect(() => {
-    fetchDetails();
-  }, [fetchDetails]);
+  useEffect(() => { fetchDetails(); }, [fetchDetails]);
 
-
+  // ─────────────────────────────────────────────────────────────
+  //  deriveStatus — driven entirely by timestamp/boolean fields
+  //  from getStockRequestById response.
+  //
+  //  Priority (highest → lowest):
+  //   1. delivered_at set                          → "Delivered"
+  //   2. resolution_required_at set                → "Resolution required"
+  //   3. stock_id + submitted_at both set          → "In Transit"
+  //      (stock has been created & submitted)
+  //   4. approved_at set + deadline_notice_at set  → "Shipping Deadline Approaching"
+  //   5. approved_at set (no stock yet)            → "Scheduled"
+  //   6. escalated_at set (no approval)            → "Escalated Due to No Approval"
+  //   7. follow_up_sent_at set (no approval)       → "Followed Up for Approval"
+  //   8. default                                   → "Pending for Approval"
+  // ─────────────────────────────────────────────────────────────
   const deriveStatus = (req) => {
     if (!req) return "—";
-    const isRecipient = req.is_recipient;
 
-    if (req.delivered_at !== null && req.grn_timestamp !== null) return "Delivered";
-    if (req.delivered_at !== null && req.grn_timestamp === null) return "Delivered";
+    if (req.delivered_at !== null && req.delivered_at !== undefined)
+      return "Delivered";
 
-    if (req.resolution_required_at !== null) return "Resolution required";
-    if (req.approved_at !== null && req.stock_id === null && req.deadline_notice_at !== null)
-      return "Shipping Deadline Approaching";
+    if (req.resolution_required_at !== null && req.resolution_required_at !== undefined)
+      return "Resolution required";
 
-    if (req.approved_at !== null && req.stock_id === null)
-      return isRecipient ? "Awaiting Shipment" : "Scheduled";
+ 
+    if (req.stock_id !== null && req.stock_id !== undefined &&
+        req.submitted_at !== null && req.submitted_at !== undefined)
+      return "In Transit";
 
-    if (req.approved_at !== null && req.stock_id !== null)
-      return isRecipient ? "Awaiting Shipment" : "Scheduled";
+    if (req.approved_at !== null && req.approved_at !== undefined) {
+      if (req.deadline_notice_at !== null && req.deadline_notice_at !== undefined)
+        return "Shipping Deadline Approaching";
+      // approved but stock not yet submitted → scheduled for dispatch
+      return "Scheduled";
+    }
 
-    if (req.approved_at === null && req.escalation_enabled && req.escalated_at !== null)
+    if (req.escalation_enabled &&
+        req.escalated_at !== null && req.escalated_at !== undefined)
       return "Escalated Due to No Approval";
 
-    if (req.approved_at === null && req.follow_up_enabled && req.follow_up_sent_at !== null)
+    if (req.follow_up_enabled &&
+        req.follow_up_sent_at !== null && req.follow_up_sent_at !== undefined)
       return "Followed Up for Approval";
 
     return "Pending for Approval";
   };
 
+  // ─────────────────────────────────────────────────────────────
+  //  Action handlers
+  // ─────────────────────────────────────────────────────────────
 
   const handleApprove = async () => {
     const { value: totalDays, isConfirmed } = await MySwal.fire({
@@ -821,25 +1008,21 @@ const StockRequestDetails = () => {
     try {
       await AuthService.approveStockRequest(id, { total_days: totalDays });
       MySwal.fire({
-        icon: "success",
-        title: "Approved!",
+        icon: "success", title: "Approved!",
         text: `Request approved. Scheduled dispatch in ${totalDays} day(s).`,
-        timer: 2500,
-        showConfirmButton: false,
+        timer: 2500, showConfirmButton: false,
       });
       fetchDetails();
     } catch (err) {
       console.error("approveStockRequest:", err);
       MySwal.fire({
-        icon: "error",
-        title: "Error",
+        icon: "error", title: "Error",
         text: err.response?.data?.message || "Failed to approve request.",
       });
     } finally {
       setActionLoading(false);
     }
   };
-
 
   const handleMarkReceived = async () => {
     const { isConfirmed } = await MySwal.fire({
@@ -865,18 +1048,15 @@ const StockRequestDetails = () => {
     try {
       await AuthService.markStockRequestReceived(id);
       MySwal.fire({
-        icon: "success",
-        title: "Received!",
+        icon: "success", title: "Received!",
         text: "Stock delivery confirmed successfully.",
-        timer: 2500,
-        showConfirmButton: false,
+        timer: 2500, showConfirmButton: false,
       });
       fetchDetails();
     } catch (err) {
       console.error("markStockRequestReceived:", err);
       MySwal.fire({
-        icon: "error",
-        title: "Error",
+        icon: "error", title: "Error",
         text: err.response?.data?.message || "Failed to confirm delivery.",
       });
     } finally {
@@ -885,16 +1065,13 @@ const StockRequestDetails = () => {
   };
 
   // ─────────────────────────────────────────────────────────────
-  //  Loading / not found guards
+  //  Loading / not-found guards
   // ─────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
       <div className="page-wrapper">
-        <div
-          className="content d-flex justify-content-center align-items-center"
-          style={{ minHeight: 400 }}
-        >
+        <div className="content d-flex justify-content-center align-items-center" style={{ minHeight: 400 }}>
           <div className="text-center">
             <div className="spinner-border text-primary mb-3" />
             <p>Loading stock request details…</p>
@@ -925,25 +1102,26 @@ const StockRequestDetails = () => {
   const statusCfg      = getStatusCfg(computedStatus);
   const priorityCfg    = getPriorityCfg(request.priority);
 
+  const isSupplier  = request.is_supplier  === true;
+  const isRecipient = request.is_recipient === true;
 
-  const isSupplier  = request.is_supplier;
-  const isRecipient = request.is_recipient;
-
-
+  // Supplier can approve while request is still awaiting approval
   const canApprove =
     isSupplier &&
     ["Pending for Approval", "Followed Up for Approval", "Escalated Due to No Approval"].includes(
       computedStatus
     );
 
- 
+  // Recipient can confirm delivery only when:
+  //   • stock has been created AND submitted (both stock_id + submitted_at are set)
+  //   • delivery not yet confirmed (delivered_at is null)
   const canReceive =
     isRecipient &&
-    request.stock_id !== null && 
-    request.delivered_at === null;
+    request.stock_id    !== null && request.stock_id    !== undefined &&
+    request.submitted_at !== null && request.submitted_at !== undefined &&
+    (request.delivered_at === null || request.delivered_at === undefined);
 
   const totalQty = articles.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
-
 
   const ccEmails = Array.isArray(request.cc_recipients)
     ? request.cc_recipients
@@ -972,34 +1150,29 @@ const StockRequestDetails = () => {
           </div>
           <div className="page-btn d-flex gap-2 flex-wrap">
 
-            {/* Supplier (Dispatcher): Approve button */}
             {canApprove && (
               <button
                 className="btn btn-success"
                 onClick={handleApprove}
                 disabled={actionLoading}
               >
-                {actionLoading ? (
-                  <span className="spinner-border spinner-border-sm me-2" />
-                ) : (
-                  <ThumbsUp size={16} className="me-2" />
-                )}
+                {actionLoading
+                  ? <span className="spinner-border spinner-border-sm me-2" />
+                  : <ThumbsUp size={16} className="me-2" />}
                 Approve Request
               </button>
             )}
 
-            {/* Recipient (Requester): Confirm Delivery button */}
+            {/* Confirm Delivery — only when stock_id + submitted_at are both present */}
             {canReceive && (
               <button
                 className="btn btn-primary"
                 onClick={handleMarkReceived}
                 disabled={actionLoading}
               >
-                {actionLoading ? (
-                  <span className="spinner-border spinner-border-sm me-2" />
-                ) : (
-                  <CheckCircle size={16} className="me-2" />
-                )}
+                {actionLoading
+                  ? <span className="spinner-border spinner-border-sm me-2" />
+                  : <CheckCircle size={16} className="me-2" />}
                 Confirm Delivery
               </button>
             )}
@@ -1057,7 +1230,6 @@ const StockRequestDetails = () => {
                 <div className="alert alert-light mb-3 py-2 d-flex align-items-center gap-2">
                   <User size={16} className="text-danger flex-shrink-0" />
                   <div>
-                    {/* Backend fields: recipient_name, destination */}
                     <strong>{request.recipient_name || "—"}</strong>
                     <div className="text-muted small">{request.destination || "—"}</div>
                   </div>
@@ -1071,7 +1243,6 @@ const StockRequestDetails = () => {
                 <div className="alert alert-light mb-0 py-2 d-flex align-items-center gap-2">
                   <Truck size={16} className="text-success flex-shrink-0" />
                   <div>
-                    {/* Backend fields: supplier_name, source */}
                     <strong>{request.supplier_name || "—"}</strong>
                     <div className="text-muted small">{request.source || "—"}</div>
                   </div>
@@ -1110,7 +1281,6 @@ const StockRequestDetails = () => {
                   </div>
                 </div>
 
-                {/* Scheduled dispatch */}
                 {request.scheduled_dispatch && (
                   <div className="mb-3">
                     <p className="text-muted small mb-1">
@@ -1120,7 +1290,6 @@ const StockRequestDetails = () => {
                   </div>
                 )}
 
-                {/* Automation flags */}
                 <div className="row mb-3">
                   {request.follow_up_enabled !== undefined && (
                     <div className="col-6">
@@ -1150,7 +1319,6 @@ const StockRequestDetails = () => {
                   )}
                 </div>
 
-                {/* CC emails */}
                 {ccEmails.length > 0 && (
                   <div className="mb-3">
                     <p className="text-muted small mb-1">
@@ -1158,7 +1326,7 @@ const StockRequestDetails = () => {
                     </p>
                     <div className="d-flex gap-1 flex-wrap">
                       {ccEmails.map((email) => (
-                        <span key={email} className="badge badge-lineinfo" style={{textTransform:"none" , fontSize: 11 }}>
+                        <span key={email} className="badge badge-lineinfo" style={{ textTransform: "none", fontSize: 11 }}>
                           {email}
                         </span>
                       ))}
@@ -1246,7 +1414,6 @@ const StockRequestDetails = () => {
         )}
 
         {/* ── Articles table ── */}
-        {/* requested_articles: [{ article_profile_id, article_profile_name, quantity }] */}
         <div className="card mb-4">
           <div className="card-body">
             <div className="d-flex align-items-center justify-content-between mb-3">
@@ -1271,7 +1438,6 @@ const StockRequestDetails = () => {
                     <tr>
                       <th style={{ width: 40 }}>#</th>
                       <th>Article</th>
-                      {/* <th>Article ID</th> */}
                       <th>Quantity Requested</th>
                     </tr>
                   </thead>
@@ -1284,16 +1450,6 @@ const StockRequestDetails = () => {
                             {art.article_profile_name || art.article_name || art.name || "—"}
                           </div>
                         </td>
-                        {/* <td>
-                          {art.article_profile_id ? (
-                            <span
-                              className="badge badge-primary"
-                              style={{ fontFamily: "monospace", fontSize: 10 }}
-                            >
-                              {art.article_profile_id.slice(0, 8)}…
-                            </span>
-                          ) : "—"}
-                        </td> */}
                         <td>
                           <span className="badge badge-info">
                             <Package size={12} className="me-1" />
@@ -1318,7 +1474,6 @@ const StockRequestDetails = () => {
 
             <div className="timeline">
 
-              {/* Created */}
               <div className="timeline-item d-flex align-items-start mb-3">
                 <div
                   className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-primary text-white flex-shrink-0"
@@ -1335,7 +1490,6 @@ const StockRequestDetails = () => {
                 </div>
               </div>
 
-              {/* Follow-up sent */}
               {request.follow_up_sent_at && (
                 <div className="timeline-item d-flex align-items-start mb-3">
                   <div
@@ -1353,7 +1507,6 @@ const StockRequestDetails = () => {
                 </div>
               )}
 
-              {/* Escalated */}
               {request.escalated_at && (
                 <div className="timeline-item d-flex align-items-start mb-3">
                   <div
@@ -1371,7 +1524,6 @@ const StockRequestDetails = () => {
                 </div>
               )}
 
-              {/* Approved */}
               {request.approved_at && (
                 <div className="timeline-item d-flex align-items-start mb-3">
                   <div
@@ -1393,14 +1545,14 @@ const StockRequestDetails = () => {
                 </div>
               )}
 
-              {/* Linked to StockFlow */}
+              {/* Stock flow linked — appears once stock_id is set */}
               {request.stock_id && (
                 <div className="timeline-item d-flex align-items-start mb-3">
                   <div
                     className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-warning text-white flex-shrink-0"
                     style={{ width: 32, height: 32 }}
                   >
-                    <Truck size={14} />
+                    <Package size={14} />
                   </div>
                   <div>
                     <h6 className="mb-1">Stock Flow Created</h6>
@@ -1414,7 +1566,24 @@ const StockRequestDetails = () => {
                 </div>
               )}
 
-              {/* Delivered */}
+              {/* In Transit — appears once submitted_at is also set */}
+              {request.stock_id && request.submitted_at && (
+                <div className="timeline-item d-flex align-items-start mb-3">
+                  <div
+                    className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-info text-white flex-shrink-0"
+                    style={{ width: 32, height: 32 }}
+                  >
+                    <Truck size={14} />
+                  </div>
+                  <div>
+                    <h6 className="mb-1">In Transit</h6>
+                    <p className="text-muted mb-0 small">
+                      Stock dispatched · {fmtDate(request.submitted_at)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {request.delivered_at ? (
                 <div className="timeline-item d-flex align-items-start mb-3">
                   <div
@@ -1426,7 +1595,7 @@ const StockRequestDetails = () => {
                   <div>
                     <h6 className="mb-1">Delivered</h6>
                     <p className="text-muted mb-0 small">
-                      Delivery confirmed by {request.recipient_name || "recipients"}
+                      Delivery confirmed by {request.recipient_name || "recipient"}
                       {" · "}{fmtDate(request.delivered_at)}
                     </p>
                   </div>
@@ -1441,14 +1610,12 @@ const StockRequestDetails = () => {
                   </div>
                   <div>
                     <h6 className="mb-1 text-muted">Awaiting Delivery</h6>
-                    <p className="text-muted mb-0 small">
-                      Pending confirmation from recipients
-                    </p>
+                    <p className="text-muted mb-0 small">Pending confirmation from recipient</p>
                   </div>
                 </div>
               )}
-            </div>
 
+            </div>
           </div>
         </div>
 

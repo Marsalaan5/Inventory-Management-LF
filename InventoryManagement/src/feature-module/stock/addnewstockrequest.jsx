@@ -588,11 +588,6 @@ import AuthService from "../../services/authService";
 
 const MySwal = withReactContent(Swal);
 
-// ─────────────────────────────────────────────────────────────
-//  Constants
-// Priority values must match backend ENUM from stock_request table
-// Backend derives these dynamically from DB: SHOW COLUMNS FROM stock_request LIKE 'priority'
-// ─────────────────────────────────────────────────────────────
 
 const PRIORITY_CFG = {
   urgent:   { color: "#dc3545", label: "Urgent"   },
@@ -622,8 +617,8 @@ const CCRecipientsInput = ({ value = [], fixed =[] ,onChange }) => {
   const addEmail = (raw) => {
     const email = raw.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
-    // if (value.includes(email)) return;
-    if (value.includes(email) || fixed.includes(email)) return;
+    if (value.includes(email)) return;
+    // if (value.includes(email) || fixed.includes(email)) return;
 
     if (value.length + fixed.length >= 15) {
       MySwal.fire({ icon: "warning", title: "Max 15 CC recipients", timer: 1500, showConfirmButton: false });
@@ -755,8 +750,7 @@ const AddNewStockRequest = () => {
   // ── Local form state ──────────────────────────────────────
   const [form, setForm] = useState({
     selected_user:       "",
-    cc_recipients:       [], 
-    cc_fixed:            [],    
+    cc_recipients:       [],    
     priority:            "standard",
     follow_up_selected:  true,
     follow_up_days:      2,
@@ -812,9 +806,7 @@ useEffect(() => {
     }
   }, [reduxError, dispatch]);
 
-  // ── Article options for react-select ─────────────────────
-  // fetchUnfilteredArticles stores in article_list
-  // Each article: { uuid, title, article_profile_name, ... }
+
   const articleOptions = (article_list || []).map((a) => ({
     value: a.uuid || a.art_prof_uuid,
     label: a.title || a.article_profile_name || "Unnamed Article",
@@ -849,20 +841,6 @@ useEffect(() => {
 
 
 
-
-  // ── Submit ────────────────────────────────────────────────
-  // Backend payload (createStockRequest / create_stock_request):
-  // {
-  //   priority: string (enum from DB),
-  //   dispatcher (renamed from selected_user via Joi rename): uuid,
-  //   cc_recipients: string[] of emails (min 1, max 15),
-  //   req_articles: [{ article_profile_id, article_profile_name, quantity }],
-  //   follow_up_selected: boolean,
-  //   follow_up_days?: number 1-7,
-  //   escalation_selected: boolean,
-  //   escalation_days?: number 1-7,
-  //   description?: string max 255,
-  // }
   const handleSubmit = async () => {
     if (!form.selected_user) {
       return MySwal.fire({
@@ -897,19 +875,20 @@ useEffect(() => {
     }
 
 
-    const totalCC = [...form.cc_fixed, ...form.cc_recipients];
-    if (totalCC.length === 0) {
-      const result = await MySwal.fire({
-        icon: "warning",
-        title: "No CC Recipients",
-        text: "Requires at least 1 CC email. Add one to continue.",
-        timer: 3000,
-        showConfirmButton: true,
-        confirmButtonText: "OK",
-      });
-      return result;
-    }
+    // const totalCC = [...form.cc_fixed, ...form.cc_recipients];
+    // if (totalCC.length === 0) {
+    //   const result = await MySwal.fire({
+    //     icon: "warning",
+    //     title: "No CC Recipients",
+    //     text: "Requires at least 1 CC email. Add one to continue.",
+    //     timer: 3000,
+    //     showConfirmButton: true,
+    //     confirmButtonText: "OK",
+    //   });
+    //   return result;
+    // }
 
+    // 
   
     const follow_up_days_val  = Math.min(form.follow_up_days,  7);
     const escalation_days_val = Math.min(form.escalation_days, 7);
@@ -917,8 +896,8 @@ useEffect(() => {
     try {
       await dispatch(createStockRequest({
         selected_user:       form.selected_user,      
-        // cc_recipients:       form.cc_recipients,
-        cc_recipients:       [...form.cc_fixed, ...form.cc_recipients],
+        // cc_recipients:       form.cc_recipients
+        cc_recipients:       form.cc_recipients?.length ? form.cc_recipients : undefined,
         priority:            form.priority,
         description:         form.description || undefined,
         follow_up_selected:  form.follow_up_selected,

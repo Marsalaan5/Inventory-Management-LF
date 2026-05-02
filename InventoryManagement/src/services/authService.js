@@ -488,7 +488,8 @@ const AuthService = {
     //   }),
     
     
-    get_existing_stock_flow:() => axiosInstance.get(`/auth/getExistingStock`),
+    
+    
     removeStockProduct: (partial_code) =>axiosInstance.put(`/auth/removeStockProduct/${partial_code}`),
     discardDraft: () => axiosInstance.delete('/auth/discardDraft'),
     stockFlowSync: (formData) => axiosInstance.post('/auth/stockFlowSync', formData),
@@ -537,7 +538,25 @@ const AuthService = {
 markStockRequestReceived:(id) => axiosInstance.patch(`/auth/confirmStockDelivery/${id}`),
 
   getDefaultCCEmails:() => axiosInstance.get("/auth/getDefaultCCEmails"),
-              // --------------------------------------------------------------------------------------------------
+
+
+  getActiveStockRequests:() => axiosInstance.get("/auth/getActiveStockRequests"),
+
+  get_approved_stock_flow:(id) => axiosInstance.get(`/auth/getApprovedStock/${id}`),
+
+
+
+
+  getProfileByCode: (code) =>axiosInstance.get(`/auth/getProfileByCode/${code}`),
+
+  
+  getScanForTransfer: (params) =>
+  axiosInstance.get(`/auth/scanProductForTransfer`, {params}),
+
+
+
+
+          // --------------------------------------------------------------------------------------------------
               
               // getLocation:() => axiosInstance.get("/auth/listLocationNames"),
               

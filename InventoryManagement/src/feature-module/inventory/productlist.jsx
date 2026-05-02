@@ -668,7 +668,7 @@ setEditFormData({
     //   sorter: (a, b) => (a.title || "--").localeCompare(b.title || "--"),
     // },
     {
-      title: "Unique Code",
+      title: "Barcode",
       dataIndex: "partial_code",
       render: (text, record) => (
         <span className="badge badge-secondary d-block mb-1">
