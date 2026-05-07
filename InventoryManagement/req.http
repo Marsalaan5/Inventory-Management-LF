@@ -19,9 +19,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUsImVtYWlsI
 
 ###file
 # greater noida admin login 
-Get http://13.234.253.16:7000/api/auth/scanProductForTransfer/
+Get http://13.234.253.16:7000/api/auth/scanProductForTransfer?partial_code=FirstProduct&product_id=019ddd20-2c31-703b-aa3f-a12e25d4a4b5
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUsImVtYWlsIjoic3RvcmVAbWF0cml4bWV0ZXJzLmNvbSIsInJvbGVfaWQiOjIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6IkFjdGl2ZSIsIndhcmVob3VzZV9pZCI6IjAxOWJjMGYxLWUwNmQtNzM2Ni05ZjhlLTBmZmI4NDEyNGE0NCIsImlhdCI6MTc3NzYxMjIxNCwiZXhwIjoxNzc3Njk4NjE0fQ.7r6UI0ZTtvkgtNeCLgbkqDRYXCc-dmBXPxmc7Iaro2s
-Content-Type: application/json
+# Content-Type: application/json
 
 # {
 #      "product_id": "019ddd22-e489-73f8-90c7-b6b0264556a5"
@@ -30,6 +30,37 @@ Content-Type: application/json
 ###
 # super admin login 
 
-GET http://13.234.253.16:7000/api/auth/getStockRequestsByUser
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUsImVtYWlsIjoic3RvcmVAbWF0cml4bWV0ZXJzLmNvbSIsInJvbGVfaWQiOjIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6IkFjdGl2ZSIsIndhcmVob3VzZV9pZCI6IjAxOWJjMGYxLWUwNmQtNzM2Ni05ZjhlLTBmZmI4NDEyNGE0NCIsImlhdCI6MTc3NzQ1MzI5NCwiZXhwIjoxNzc3NTM5Njk0fQ.9f1P80eHjLOvFEzlqSsluIgtA19d-SJbdkrBG2vslZo
+GET http://13.234.253.16:7000/api/auth/getActiveStockRequests
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUsImVtYWlsIjoic3RvcmVAbWF0cml4bWV0ZXJzLmNvbSIsInJvbGVfaWQiOjIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6IkFjdGl2ZSIsIndhcmVob3VzZV9pZCI6IjAxOWJjMGYxLWUwNmQtNzM2Ni05ZjhlLTBmZmI4NDEyNGE0NCIsImlhdCI6MTc3Nzg3MjQ3OCwiZXhwIjoxNzc3OTU4ODc4fQ.vmbG6Ff4ZSC_iINZ2XISmaA46_5e0s0bC0h-3KtV-sA
 
+
+###
+
+
+ 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUsImVtYWlsIjoic3RvcmVAbWF0cml4bWV0ZXJzLmNvbSIsInJvbGVfaWQiOjIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6IkFjdGl2ZSIsIndhcmVob3VzZV9pZCI6IjAxOWJjMGYxLWUwNmQtNzM2Ni05ZjhlLTBmZmI4NDEyNGE0NCIsImlhdCI6MTc3NzYxMjIxNCwiZXhwIjoxNzc3Njk4NjE0fQ.7r6UI0ZTtvkgtNeCLgbkqDRYXCc-dmBXPxmc7Iaro2s
+
+
+
+###
+
+GET http://13.234.253.16:7000/api/auth/getApprovedStock/SRQ-526-006
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUsImVtYWlsIjoic3RvcmVAbWF0cml4bWV0ZXJzLmNvbSIsInJvbGVfaWQiOjIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6IkFjdGl2ZSIsIndhcmVob3VzZV9pZCI6IjAxOWJjMGYxLWUwNmQtNzM2Ni05ZjhlLTBmZmI4NDEyNGE0NCIsImlhdCI6MTc3Nzg3MjQ3OCwiZXhwIjoxNzc3OTU4ODc4fQ.vmbG6Ff4ZSC_iINZ2XISmaA46_5e0s0bC0h-3KtV-sA
+
+
+###
+
+POST  http://13.234.253.16:7000/api/auth/stockFlowSubmit
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUsImVtYWlsIjoic3RvcmVAbWF0cml4bWV0ZXJzLmNvbSIsInJvbGVfaWQiOjIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6IkFjdGl2ZSIsIndhcmVob3VzZV9pZCI6IjAxOWJjMGYxLWUwNmQtNzM2Ni05ZjhlLTBmZmI4NDEyNGE0NCIsImlhdCI6MTc3NzY5NzA0NCwiZXhwIjoxNzc3NzgzNDQ0fQ.TlRUpkgefbz_Zh-Mc9ask6MKhlEvwS9-4JcJdnEyvpw
+Content-Type: application/json
+
+{
+   "stock_id": "STT-GNW-02526-1"
+}
+
+
+
+###
+
+DELETE http://13.234.253.16:7000/api/auth/autoRemoveStock/STT-GNW-04526-2
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUsImVtYWlsIjoic3RvcmVAbWF0cml4bWV0ZXJzLmNvbSIsInJvbGVfaWQiOjIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6IkFjdGl2ZSIsIndhcmVob3VzZV9pZCI6IjAxOWJjMGYxLWUwNmQtNzM2Ni05ZjhlLTBmZmI4NDEyNGE0NCIsImlhdCI6MTc3Nzg3MjQ3OCwiZXhwIjoxNzc3OTU4ODc4fQ.vmbG6Ff4ZSC_iINZ2XISmaA46_5e0s0bC0h-3KtV-sA

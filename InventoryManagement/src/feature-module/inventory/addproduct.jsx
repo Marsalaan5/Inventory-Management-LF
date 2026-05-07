@@ -138,7 +138,7 @@ const handleVerifyBarcode = async (barcode) => {
       return;
     }
 
-   
+  //  
     if (response.is_found === true) {
       const product = response.data;
 
@@ -3018,3 +3018,45 @@ export default AddProduct;
 // export default AddProduct;
 
 // //with Add multiple product - End
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

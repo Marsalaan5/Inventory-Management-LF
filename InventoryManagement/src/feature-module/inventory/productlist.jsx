@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Select from "react-select";
@@ -33,15 +31,14 @@ import {
   resetFilters,
   updateProduct,
   deleteProduct as deleteProductAction,
-  scanProduct,
+  // scanProduct,
+  scanProductFromDb,
   clearScannedProduct,
 } from "../../core/redux/slices/productSlice";
 import { usePermissions } from "../../hooks/usePermission";
 import { useNavigate } from "react-router-dom";
 import BulkUploadProduct from "./bulkuploadproduct";
 // import { Upload } from "antd";
-
-
 
 const ProductList = () => {
   const navigate = useNavigate();
@@ -78,8 +75,7 @@ const ProductList = () => {
   const [articleProfiles, setArticleProfiles] = useState([]);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
 
-
- const [titleWasPresent, setTitleWasPresent] = useState(false);
+  const [titleWasPresent, setTitleWasPresent] = useState(false);
 
   const [editingCell, setEditingCell] = useState(null);
   const [editingValue, setEditingValue] = useState("");
@@ -195,15 +191,17 @@ const ProductList = () => {
       MySwal.fire({
         icon: "warning",
         title: "Empty Input",
-        text: "Please enter a partial_code",
+        text: "Please enter a Code",
         timer: 2000,
       });
       return;
     }
-    
+
     // <p><strong>Unique Code:</strong> ${product.partial_code}</p>
     try {
-      const product = await dispatch(scanProduct(scanInput.trim())).unwrap();
+      const product = await dispatch(
+        scanProductFromDb(scanInput.trim()),
+      ).unwrap();
 
       MySwal.fire({
         title: `<strong>${product.partial_code}</strong>`,
@@ -247,13 +245,12 @@ const ProductList = () => {
       MySwal.fire({
         icon: "error",
         pr_title: "Product Not Found",
-        text: "No product found with this partial_code",
+        text: "No product found with this Code",
         timer: 3000,
       });
     }
   };
 
-  
   const handleInlineEditStart = (rowId, field, currentValue) => {
     setEditingCell({ rowId, field });
     setEditingValue(currentValue || "");
@@ -270,52 +267,50 @@ const ProductList = () => {
     try {
       setInlineSubmitting(true);
 
-     
       const product = products.find((p) => p.prod_uuid === productUuid);
-      
+
       if (!product) {
         throw new Error("Product not found");
       }
 
-   
       const currentValue = product[editingCell.field] || "";
       const newValue = editingValue.trim();
 
       if (editingCell.field === "title" && newValue === "") {
-      MySwal.fire({
-        icon: "warning",
-        title: "Warning",
-        text: "Product Name cannot be blank",
-        timer: 2000,
-        showConfirmButton: false,
-      });
-      setInlineSubmitting(false);
-      return;
-    }
+        MySwal.fire({
+          icon: "warning",
+          title: "Warning",
+          text: "Product Name cannot be blank",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        setInlineSubmitting(false);
+        return;
+      }
 
-     
       if (currentValue === newValue) {
         setEditingCell(null);
         setEditingValue("");
         setInlineSubmitting(false);
-        return; 
+        return;
       }
 
-
-    
       const updateData = {
         article_profile_id: product.article_profile_id,
-        warehouse_id: product.status !== "installed" ? product.warehouse_id : undefined,
+        warehouse_id:
+          product.status !== "installed" ? product.warehouse_id : undefined,
         location: product.location || undefined,
         in_wh_location: product.in_wh_locn || undefined,
         count: parseInt(product.count) || 0,
         status: product.status || "new",
-        title: editingCell.field === "title" 
-          ? (newValue || undefined) 
-          : (product.title || undefined),
-        description: editingCell.field === "description" 
-          ? (newValue || undefined) 
-          : (product.description || undefined),
+        title:
+          editingCell.field === "title"
+            ? newValue || undefined
+            : product.title || undefined,
+        description:
+          editingCell.field === "description"
+            ? newValue || undefined
+            : product.description || undefined,
       };
 
       await dispatch(
@@ -387,19 +382,18 @@ const ProductList = () => {
     // });
 
     setEditingProduct(product);
-setTitleWasPresent(!!product.title?.trim());
+    setTitleWasPresent(!!product.title?.trim());
 
-setEditFormData({
-  title: product.title || "",
-  article_profile_id: selectedArticleProfile || null,
-  warehouse_id: selectedWarehouse || null,
-  location: product.location || "",
-  in_wh_locn: product.in_wh_locn || "",
-  count: product.count || "",
-  status: selectedStatus || null,
-  description: product.description || "",
-});
-
+    setEditFormData({
+      title: product.title || "",
+      article_profile_id: selectedArticleProfile || null,
+      warehouse_id: selectedWarehouse || null,
+      location: product.location || "",
+      in_wh_locn: product.in_wh_locn || "",
+      count: product.count || "",
+      status: selectedStatus || null,
+      description: product.description || "",
+    });
 
     setShowEditModal(true);
   };
@@ -467,16 +461,15 @@ setEditFormData({
     }
 
     if (titleWasPresent && !editFormData.title?.trim()) {
-  MySwal.fire({
-    icon: "warning",
-    title: "Warning",
-    text: "Product Name cannot be blank once it has been set",
-    timer: 2000,
-    showConfirmButton: false,
-  });
-  return;
-}
-
+      MySwal.fire({
+        icon: "warning",
+        title: "Warning",
+        text: "Product Name cannot be blank once it has been set",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -611,7 +604,7 @@ setEditFormData({
     //   dataIndex: "title",
     //   render: (text, record) => {
     //     const isEditing = editingCell?.rowId === record.prod_uuid && editingCell?.field === "title";
-        
+
     //     if (isEditing) {
     //       return (
     //         <div className="d-flex align-items-center gap-2">
@@ -672,12 +665,16 @@ setEditFormData({
       dataIndex: "partial_code",
       render: (text, record) => (
         <span className="badge badge-secondary d-block mb-1">
-          <Link className="text-white" to={`/product-details/${record.prod_uuid}`}>
+          <Link
+            className="text-white"
+            to={`/product-details/${record.prod_uuid}`}
+          >
             {text}
           </Link>
         </span>
       ),
-      sorter: (a, b) => (a.partial_code || "").localeCompare(b.partial_code || ""),
+      sorter: (a, b) =>
+        (a.partial_code || "").localeCompare(b.partial_code || ""),
     },
     {
       title: "Article Profile",
@@ -715,12 +712,14 @@ setEditFormData({
       ),
       sorter: (a, b) => (a.count || 0) - (b.count || 0),
     },
-     {
+    {
       title: "Description",
       dataIndex: "description",
       render: (text, record) => {
-        const isEditing = editingCell?.rowId === record.prod_uuid && editingCell?.field === "description";
-        
+        const isEditing =
+          editingCell?.rowId === record.prod_uuid &&
+          editingCell?.field === "description";
+
         if (isEditing) {
           return (
             <div className="d-flex align-items-center gap-2">
@@ -761,15 +760,18 @@ setEditFormData({
 
         const displayText = text || "N/A";
         const isTruncated = text && text.length > 20;
-        const truncatedText = isTruncated ? text.substring(0, 20) + "..." : displayText;
+        const truncatedText = isTruncated
+          ? text.substring(0, 20) + "..."
+          : displayText;
 
         return (
           <span
-            onDoubleClick={() => handleInlineEditStart(record.prod_uuid, "description", text)}
+            onDoubleClick={() =>
+              handleInlineEditStart(record.prod_uuid, "description", text)
+            }
             style={{ cursor: "pointer" }}
             title={isTruncated ? text : "Double-click to edit"}
           >
-            
             {truncatedText}
           </span>
         );
@@ -862,24 +864,24 @@ setEditFormData({
             headerAction={setToogleHeader}
             showPrint={true}
           />
-  <div className="page-btn d-flex gap-2">
-  <button onClick={handleScanClick} className="btn btn-secondary">
-    <Camera className="me-2 iconsize" />
-    Scan Product
-  </button>
- {/* <button onClick={() => setShowBulkUploadModal(true)} className="btn btn-success">
+          <div className="page-btn d-flex gap-2">
+            <button onClick={handleScanClick} className="btn btn-secondary">
+              <Camera className="me-2 iconsize" />
+              Scan Product
+            </button>
+            {/* <button onClick={() => setShowBulkUploadModal(true)} className="btn btn-success">
     <Upload className="me-2 iconsize" />
     Bulk Upload
   </button> */}
-  <Link to={route.lotproduct} className="btn btn-info">
-    <Package className="me-2 iconsize" />
-    Lot Upload
-  </Link>
-  <Link to={route.addproduct} className="btn btn-added">
-    <PlusCircle className="me-2 iconsize" />
-    Add New Product
-  </Link>
-</div>
+            <Link to={route.lotproduct} className="btn btn-info">
+              <Package className="me-2 iconsize" />
+              Lot Upload
+            </Link>
+            <Link to={route.addproduct} className="btn btn-added">
+              <PlusCircle className="me-2 iconsize" />
+              Add New Product
+            </Link>
+          </div>
         </div>
 
         <div className="card table-list-card">
@@ -1035,7 +1037,10 @@ setEditFormData({
             {/* Products Table with Pagination */}
             <div className="table-responsive">
               <p className="text-muted small mb-2">
-                <i>Tip: Double-click on Product Name or Description to edit inline</i>
+                <i>
+                  Tip: Double-click on Product Name or Description to edit
+                  inline
+                </i>
               </p>
               {loading ? (
                 <div className="text-center p-5">
@@ -1134,7 +1139,7 @@ setEditFormData({
       <BulkUploadProduct
         show={showBulkUploadModal}
         onHide={() => setShowBulkUploadModal(false)}
-        onSuccess={handleBulkUploadSuccess}  
+        onSuccess={handleBulkUploadSuccess}
       />
 
       {/* Edit Product Modal */}
@@ -1214,9 +1219,9 @@ setEditFormData({
                                 styles={{
                                   control: (base) => ({
                                     ...base,
-                                    backgroundColor: '#e9ecef',
-                                    cursor: 'not-allowed'
-                                  })
+                                    backgroundColor: "#e9ecef",
+                                    cursor: "not-allowed",
+                                  }),
                                 }}
                               />
                               <small className="text-muted">
