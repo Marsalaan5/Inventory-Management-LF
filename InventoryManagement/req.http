@@ -1,3 +1,18 @@
+Post http://13.234.253.16:7000/api/auth/signin
+Content-Type: application/json
+
+   # "email" :"gkp@livefibre.in",
+   # "email" :"moradabad@livefibre.in",
+   # "email" :"ars@gmail.com",
+{
+   "email" :"store@matrixmeters.com",
+   "password":"12345"
+}
+
+
+
+
+###
 Get http://13.234.253.16:7000/api/auth/getDefaultCCEmails
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MjgsImVtYWlsIjoiZ2twQGxpdmVmaWJyZS5pbiIsInJvbGVfaWQiOjIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6IkFjdGl2ZSIsIndhcmVob3VzZV9pZCI6IjAxOWM0NjQ2LTE0YTctNzZjOC1iNGE2LTU1NDE5YjkwNDQ5YSIsImlhdCI6MTc3NzQzOTYwNSwiZXhwIjoxNzc3NTI2MDA1fQ.h23cwbCytAi05hNDbm3YqtCC6ZHAGLTwsOXrpXrM7sM
 
@@ -64,3 +79,12 @@ Content-Type: application/json
 
 DELETE http://13.234.253.16:7000/api/auth/autoRemoveStock/STT-GNW-04526-2
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUsImVtYWlsIjoic3RvcmVAbWF0cml4bWV0ZXJzLmNvbSIsInJvbGVfaWQiOjIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6IkFjdGl2ZSIsIndhcmVob3VzZV9pZCI6IjAxOWJjMGYxLWUwNmQtNzM2Ni05ZjhlLTBmZmI4NDEyNGE0NCIsImlhdCI6MTc3Nzg3MjQ3OCwiZXhwIjoxNzc3OTU4ODc4fQ.vmbG6Ff4ZSC_iINZ2XISmaA46_5e0s0bC0h-3KtV-sA
+
+
+
+###
+
+
+
+GET http://13.234.253.16:7000/api/auth/getStockTransfers?page_no=1&limit=10
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTUsImVtYWlsIjoic3RvcmVAbWF0cml4bWV0ZXJzLmNvbSIsInJvbGVfaWQiOjIsInJvbGUiOiJBZG1pbiIsInN0YXR1cyI6IkFjdGl2ZSIsIndhcmVob3VzZV9pZCI6IjAxOWJjMGYxLWUwNmQtNzM2Ni05ZjhlLTBmZmI4NDEyNGE0NCIsImlhdCI6MTc3ODA0NDkyOCwiZXhwIjoxNzc4MTMxMzI4fQ.KkfnyCcNTfkKul10aVssXkDEUk2QHTSGvxDMsyx9sgE

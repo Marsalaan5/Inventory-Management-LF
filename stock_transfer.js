@@ -1549,7 +1549,7 @@ export const auto_remove_stock = async (req, res) => {
 
 		const { user } = req;
 
-		// logged-in user owns this stock
+	
 		if (stock_data[0].created_by !== user.uuid) {
 			return res.status(403).json({
 				success: false,

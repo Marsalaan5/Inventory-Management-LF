@@ -154,7 +154,7 @@ const AddStockFlow = () => {
     });
   };
 
-  const resetDraftState = () => {
+  const resetDraftState = useCallback(() => {
     setScanned([]);
     setStockId(null);
     setSyncInfo(null);``
@@ -169,7 +169,7 @@ const AddStockFlow = () => {
 
   setLockedRequest(null);
   localStorage.removeItem("selected_stock_request");
-  };
+  },[]);
 
   const mapDraftProduct = (p) => ({
     prod_uuid:            p.prod_uuid,
@@ -667,7 +667,7 @@ const handleDeleteProduct = useCallback(
       }
     });
   },
-  [syncToDb]
+  [syncToDb,resetDraftState]
 );
 
 
@@ -744,49 +744,49 @@ const handleDeleteProduct = useCallback(
   // };
 
 
-  const handleDiscardDraft = () => {
-  MySwal.fire({
-    title: "Discard entire draft?",
-    text: "All scanned products will be removed.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#d33",
-    confirmButtonText: "Yes, discard",
-  }).then(async (result) => {
-    if (!result.isConfirmed) return;
+//   const handleDiscardDraft = () => {
+//   MySwal.fire({
+//     title: "Discard entire draft?",
+//     text: "All scanned products will be removed.",
+//     icon: "warning",
+//     showCancelButton: true,
+//     confirmButtonColor: "#d33",
+//     confirmButtonText: "Yes, discard",
+//   }).then(async (result) => {
+//     if (!result.isConfirmed) return;
 
-    try {
-      let resMessage;
+//     try {
+//       let resMessage;
 
-      if (currentStockIdRef.current) {
-        const res = await AuthService.autoRemoveStock(
-          currentStockIdRef.current
-        );
+//       if (currentStockIdRef.current) {
+//         const res = await AuthService.autoRemoveStock(
+//           currentStockIdRef.current
+//         );
 
-        resMessage =
-          res?.data?.message ||
-          res?.message;
-      }
+//         resMessage =
+//           res?.data?.message ||
+//           res?.message;
+//       }
 
-      resetDraftState();
+//       resetDraftState();
 
-      toast(
-        "info",
-        "Draft Discarded",
-        resMessage || "Stock data removed successfully"
-      );
-    } catch (err) {
-      const msg =
-        typeof err === "string"
-          ? err
-          : err?.response?.data?.message ||
-            err?.message ||
-            "Failed to discard.";
+//       toast(
+//         "info",
+//         "Draft Discarded",
+//         resMessage || "Stock data removed successfully"
+//       );
+//     } catch (err) {
+//       const msg =
+//         typeof err === "string"
+//           ? err
+//           : err?.response?.data?.message ||
+//             err?.message ||
+//             "Failed to discard.";
 
-      toast("error", "Error", msg, 3000);
-    }
-  });
-};
+//       toast("error", "Error", msg, 3000);
+//     }
+//   });
+// };
 
 
   // ── handleQtyChange —  
@@ -835,7 +835,7 @@ const handleDeleteProduct = useCallback(
     }, 800);
   }, [syncToDb]); // eslint-disable-line
 
-  // ── Bill / Invoice — immediate sync on add/remove ────────────────
+  // ── Bill / Invoice 
   const handleBillChange = useCallback((e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1086,22 +1086,23 @@ const handleDeleteProduct = useCallback(
         )}
 
         {/* Active Draft Banner */}
-        {!loadingDraft && syncInfo && (
+        {/* {!loadingDraft && syncInfo && (
           <div className="alert alert-warning d-flex flex-column mb-3">
-            <div className="d-flex align-items-center mb-2">
+            <div className="d-flex align-items-center mb-2 gap-2">
               <RefreshCw size={16} className="me-2" />
-              <strong>Active Draft:</strong>
+              <strong>Active Draft:</strong> <b> Stock ID : </b>
               <span className="ms-2 badge badge-warning">{syncInfo.stock_id}</span>
-              {isSyncing && <span className="spinner-border spinner-border-sm ms-2 text-muted" />}
-            </div>
-            <div className="small">
-              {syncInfo.stock_req_id     && <div><b>Request:</b>  {syncInfo.stock_req_id}</div>}
-              {syncInfo.source_name      && <div><b>From:</b>     {syncInfo.source_name}</div>}
-              {syncInfo.destination_name && <div><b>To:</b>       {syncInfo.destination_name}</div>}
+              {isSyncing && <span className="spinner-border spinner-border-sm ms-2 text-muted" />} 
+               {syncInfo.stock_req_id     && <div><b>| Request ID:</b>  {syncInfo.stock_req_id}</div>} 
+              {syncInfo.source_name      && <div><b>| From:</b>     {syncInfo.source_name}</div>} 
+              {syncInfo.destination_name && <div><b>| To:</b>       {syncInfo.destination_name}</div>}
+            </div> */}
+            {/* <div className="small">
+             
               {syncInfo.supplier_name    && <div><b>Supplier:</b> {syncInfo.supplier_name}</div>}
               {syncInfo.recipient_name   && <div><b>Recipient:</b>{syncInfo.recipient_name}</div>}
-            </div>
-            {scannedProducts.length > 0 && (
+            </div> */}
+            {/* {scannedProducts.length > 0 && (
               <button
                 type="button"
                 className="btn btn-sm btn-outline-danger mt-2 align-self-start"
@@ -1109,9 +1110,47 @@ const handleDeleteProduct = useCallback(
               >
                 <Trash2 size={14} className="me-1" />Discard Draft
               </button>
-            )}
-          </div>
-        )}
+            )} */}
+          {/* </div>
+        )} */}
+
+        {!loadingDraft && syncInfo?.stock_id && (
+  <div className="alert alert-warning d-flex flex-column mb-3">
+    <div className="d-flex align-items-center mb-2 gap-2">
+      <RefreshCw size={16} className="me-2" />
+
+      <strong>Active Draft:</strong>
+
+      <b>Stock ID :</b>
+
+      <span className="ms-2 badge badge-warning">
+        {syncInfo.stock_id}
+      </span>
+
+      {isSyncing && (
+        <span className="spinner-border spinner-border-sm ms-2 text-muted" />
+      )}
+
+      {syncInfo.stock_req_id && (
+        <div>
+          <b>| Request ID:</b> {syncInfo.stock_req_id}
+        </div>
+      )}
+
+      {syncInfo.source_name && (
+        <div>
+          <b>| From:</b> {syncInfo.source_name}
+        </div>
+      )}
+
+      {syncInfo.destination_name && (
+        <div>
+          <b>| To:</b> {syncInfo.destination_name}
+        </div>
+      )}
+    </div>
+  </div>  
+)}
 
         {/* Product errors */}
         {productErrors.length > 0 && (
@@ -1219,9 +1258,9 @@ const handleDeleteProduct = useCallback(
                       noOptionsMessage={() => reqDropdownLoading ? "Loading…" : "No approved requests found"}
                     />
                     <small className="text-muted">
-                      Showing approved requests assigned to you —{" "}
-                      <span className="badge badge-warning" style={{ fontSize: "0.65rem" }}>Draft</span>{" "}
-                      = has saved products
+                      Showing Approved & Draft requests assigned to you.
+                      {/* <span className="badge badge-warning" style={{ fontSize: "0.65rem" }}>Draft</span>{" "} */}
+                      {/* = has saved products */}
                     </small>
                   </>
                 )}
@@ -1265,7 +1304,7 @@ const handleDeleteProduct = useCallback(
                   rows="2"
                   placeholder="Notes about this transfer…"
                 />
-                <small className="text-muted">Auto-saved after you stop typing</small>
+                <small className="text-muted">Auto-saved</small>
               </div>
               <div className="col-lg-6">
                 <label className="form-label">Total Transfer Quantity</label>
@@ -1456,21 +1495,24 @@ const handleDeleteProduct = useCallback(
 
         {/* Transfer Summary */}
         {scannedProducts.length > 0 && (
-          <div className="alert alert-warning mb-3">
-            <strong>Transfer Summary</strong>
-            <ul className="mb-0 mt-2">
-              <li>Total Products: {scannedProducts.length}</li>
-              <li>Total Transfer Quantity: {totalQty} units</li>
-              {currentUser?.warehouse_name && <li>From: {currentUser.warehouse_name}</li>}
-              {formData.stock_request_id   && <li>Stock Request: {formData.stock_request_id.label}</li>}
+          <div className="alert alert-warning  d-flex flex-column mb-2">
+            <div className="d-flex align-items-center mb-2 gap-2">
+          {/* <div className="alert alert-warning mb-3 gap-2"> */}
+            <strong>Transfer Summary :</strong>
+            {/* <div className="d-flex mb-0 mt-2"> */}
+              <span>Total Products: {scannedProducts.length}</span> | 
+              <span>Total Transfer Quantity: {totalQty} units</span> |
+              {/* {currentUser?.warehouse_name && <li>From: {currentUser.warehouse_name}</li>} */}
+              {/* {formData.stock_request_id   && <li>Stock Request: {formData.stock_request_id.label}</li>} */}
               {effectiveTransport && (
-                <li>Transport: {effectiveTransport.label}{!formData.transport ? " (default)" : ""}</li>
-              )}
-              <li>Status after submit: <strong>in-transit</strong></li>
-              {currentStockId && <li>Draft Stock ID: <strong>{currentStockId}</strong></li>}
-            </ul>
+                <span>Transport: {effectiveTransport.label}{!formData.transport ? " (default)" : ""}</span> 
+              )} |
+              <span>Status after submit: <strong>in-transit</strong></span> |
+              {currentStockId && <span>Draft Stock ID: <strong>{currentStockId}</strong></span>}
+            </div>
             <small className="text-muted d-block mt-1">Inventory will be updated on submission.</small>
           </div>
+          // </div>
         )}
 
         {/* Submit / Cancel */}

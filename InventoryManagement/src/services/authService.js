@@ -211,6 +211,14 @@ const AuthService = {
     axiosInstance.patch(`/auth/updateStockFLowByID/${id}`, data),
   deleteStockFlow: (id) => axiosInstance.delete(`/auth/deleteStockFlow/${id}`),
   getStockFlowStats: () => axiosInstance.get(`/auth/getStockFlowStats/stats`),
+
+
+
+getStockFlowMovement:(days = 30)  => axiosInstance.get("/auth/getStockFlowMovement/movement", { params: { days } }),
+
+getStockFlowWarehouseDist: () => axiosInstance.get("/auth/getStockFlowWarehouseDist/warehouse-dist"),
+
+
   downloadStockFlowInvoice: (id) =>
     axiosInstance.get(`/auth/stockflow/${id}/invoice`, {
       responseType: "blob",

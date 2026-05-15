@@ -27,9 +27,6 @@ import {
 } from "../../core/redux/slices/stockSlice";
 import AuthService from "../../services/authService";
 
-// ─────────────────────────────────────────────────────────────
-//  Constants
-// ─────────────────────────────────────────────────────────────
 
 const PRIORITY_CFG = {
   urgent: { color: "#dc3545", badge: "badge-linedanger", label: "Urgent" },

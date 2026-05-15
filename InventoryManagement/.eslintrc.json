@@ -49,5 +49,12 @@
     "rules": {
       "react/no-unescaped-entities": "off"
       //add customize rules here as per your project's needs
-    }
+    },
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    "build/",
+    ".next/",
+    "out/"
+  ]
 }

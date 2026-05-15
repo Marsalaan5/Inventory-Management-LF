@@ -37,10 +37,32 @@
 
    
         <tr><td style="padding:28px 32px;">
-          <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{dispatcher_name}}</strong>,</p>
+
+      <!-- New Stock reuqest for Disptcher after approval   -->
+
+           <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{dispatcher_name}}</strong>,</p>
           <p style="margin:0 0 20px;color:#495057;">
             <strong>{{requester_name}}</strong> ({{requester_email}}) has submitted a new stock request assigned to you.
-          </p>
+          </p> 
+
+    <!-- New Stock reuqest for Approver  -->
+
+    <!-- <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{approver_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            <strong>{{requester_name}}</strong> ({{requester_email}}) has submitted a new stock request AND IS WAITING FOR YOUR APPROVAL.
+          </p> -->
+
+
+           <!-- Rejected New Stock reuqest for Requester -->
+
+          <!-- <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{requester_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            <strong>{{approver_name}}</strong> ({{approver_email}}) Your new Stock has been  rejected.
+          </p> -->
+
+
+
+
 
    
           <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #dee2e6;border-radius:6px;margin-bottom:20px;font-size:14px;">
@@ -95,3 +117,67 @@
   </table>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{dispatcher_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            <strong>{{requester_name}}</strong> ({{requester_email}}) has submitted a new stock request assigned to you.
+          </p>
+
+
+
+
+
+
+
+      <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{approver_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            <strong>{{requester_name}}</strong> ({{requester_email}}) has submitted a new stock request AND IS WAITING FOR YOUR APPORVAL.
+          </p>
+
+
+
+
+
+      <p style="margin:0 0 16px;color:#212529;">Hello <strong>{{requester_name}}</strong>,</p>
+          <p style="margin:0 0 20px;color:#495057;">
+            <strong>{{approver_name}}</strong> ({{approver_email}}) Your new Stock has beem  rejected.
+          </p>
+
+
+
+
+          <!-- email template for - 
+          1.Stock Request Generated
+          2.Stock Request to Approver
+          3.Stock Request to Dispatcher after approval
+          4. Follow up to Approver
+          5.Follow up to Dispatcher
+          6.Escalation to CC Rec After Follow up - For Not Approved and not Dispatched
+          7.Resolution to High Authority
+          8.Stock Request Reject
+          8.Stock Flow Dispatched.
+          9.Stock Flow Received.
+          10.Deadline For Stock Dispatched.
+
+          
+          
+          -->

@@ -116,7 +116,7 @@ const StockRequestDetails = () => {
     if (req.approved_at !== null && req.approved_at !== undefined) {
       if (req.deadline_notice_at !== null && req.deadline_notice_at !== undefined)
         return "Shipping Deadline Approaching";
-      // approved but stock not yet submitted → scheduled for dispatch
+
       return "Scheduled";
     }
 
@@ -272,16 +272,18 @@ const StockRequestDetails = () => {
   const statusCfg      = getStatusCfg(computedStatus);
   const priorityCfg    = getPriorityCfg(request.priority);
 
-  const isSupplier  = request.is_supplier  === true;
+  const isSuperAdmin  = request.is_super_admin  === true;
   const isRecipient = request.is_recipient === true;
 
  
   const canApprove =
-    isSupplier &&
+    isSuperAdmin &&
     ["Pending for Approval", "Followed Up for Approval", "Escalated Due to No Approval"].includes(
       computedStatus
     );
 
+
+  
 
   const canReceive =
     isRecipient &&
@@ -369,7 +371,7 @@ const StockRequestDetails = () => {
         </div>
 
         {/* ── Role  ── */}
-        {(isRecipient || isSupplier) && (
+        {(isRecipient || isSuperAdmin) && (
           <div className="alert alert-light py-2 mb-3 d-flex align-items-center gap-2">
             <User size={15} />
             <span className="small">
