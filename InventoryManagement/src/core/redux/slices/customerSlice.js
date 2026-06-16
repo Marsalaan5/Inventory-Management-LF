@@ -9,7 +9,7 @@ import { CustomerData } from '../../json/customer_data';
 export const fetchCustomerData = createAsyncThunk(
   'customer/fetchCustomerData',
   async () => {
-    const response = await fetch('https://your-api.com/customers');
+    const response = await fetch('https://');
     if (!response.ok) throw new Error('Failed to fetch customers');
     const data = await response.json();
     return data;

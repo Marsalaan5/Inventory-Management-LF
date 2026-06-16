@@ -21,20 +21,20 @@ const CollapsedSidebar = () => {
     }));
   };
 
-  //only use Feather icons
+
   const renderIcon = (iconName) => {
     if (!iconName) return null;
     return getIconComponent(iconName);
   };
 
-  // Group menu by parent (top-level items become tabs)
+
   const createTabs = () => {
     return menuData.filter(item => item.parent_id === null || !item.path);
   };
 
   const tabs = createTabs();
 
-  // Recursive rendering with icons at all levels
+ 
   const renderSubmenuItems = (items, level = 0) => {
     if (!items || items.length === 0) return null;
 

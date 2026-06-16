@@ -1,11 +1,10 @@
 
 
 
-//TO DO from ALpi 
+//TO DO
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// Async thunks to fetch inventory data from backend APIs
 
 export const fetchUnits = createAsyncThunk(
   'inventory/fetchUnits',
@@ -97,7 +96,7 @@ export const fetchStockTransferData = createAsyncThunk(
   }
 );
 
-// Initial state with data, status, and error for each piece
+
 const initialState = {
   unit_data: [],
   variantattributes_data: [],

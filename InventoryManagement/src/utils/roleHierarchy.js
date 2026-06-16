@@ -1,9 +1,12 @@
 export const roleHierarchy = {
-  "viewer": 1,
-  "user": 2,
-  "admin": 3,
-  "super admin": 4,
-  "main": 5,
+  "repair person":1,
+  "viewer": 2,
+  "user": 3,
+  "warehouse admin": 4,
+  "inventory controller":5,
+  "super admin": 6,
+  "main admin": 7,
+
 };
 
 export const getRoleLevel = (roleName) => {

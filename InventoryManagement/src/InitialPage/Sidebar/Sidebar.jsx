@@ -13,24 +13,15 @@ import { usePermissions } from "../../hooks/usePermission";
 
 const Sidebar = () => {
   const location = useLocation();
-  // const {hasPermission} = usePermissions()
-   const {hasPermission, permissions, loading: permLoading} = usePermissions()
+  const {hasPermission} = usePermissions()
+  //  const {hasPermission, permissions, loading: permLoading} = usePermissions()
   
   
   const { items: sidebarData, loading } = useSelector((state) => state.menu);
   const user = useSelector((state) => state.auth.user);
   const userRole = user?.role; 
 
-    console.log("=== SIDEBAR DEBUG ===");
-  console.log("1. Redux user:", user);
-  console.log("2. userRole from usePermissions:", userRole);
-  console.log("3. permissions:", permissions);
-  console.log("4. permLoading:", permLoading);
-  console.log("5. sidebarData from Redux:", sidebarData);
-  console.log("6. sidebarData length:", sidebarData?.length);
-  console.log("7. hasPermission('Dashboard','view'):", hasPermission('Dashboard','view'));
-  console.log("8. hasPermission('Inventory','view'):", hasPermission('Inventory','view'));
-  console.log("=== END DEBUG ===");
+
   
   console.log(userRole)
 
@@ -59,26 +50,7 @@ const Sidebar = () => {
     return false;
   };
 
-  // Filter sidebar data by user role
-// const filterMenuByRole = (menuItems) => {
-//   return menuItems.map((item) => {
-//     // Clone the current item to avoid mutation
-//     const clonedItem = { ...item };
 
-//     // If the item has submenu items, filter them recursively
-//     if (clonedItem.submenuItems) {
-//       clonedItem.submenuItems = filterMenuByRole(clonedItem.submenuItems);  // Recursively filter submenus
-//     }
-
-//     // If the item is not allowed for the current role, return null
-//     if (item.roles && !item.roles.includes(userRole) && userRole !== 'Super Admin') {
-//       return null;
-//     }
-
-//     // Return the filtered/modified item
-//     return clonedItem;
-//   }).filter((item) => item !== null);  // Remove any null items from the filtered list
-// };
 
 
 const filterMenuByPermission = (menuItems) => {
@@ -100,8 +72,6 @@ const filterMenuByPermission = (menuItems) => {
   }).filter(Boolean);
 };
 
-
-  // Filter the sidebar data based on the user's role
   const filteredSidebarData = filterMenuByPermission(sidebarData);
 
   if (loading) {
@@ -117,7 +87,7 @@ const filterMenuByPermission = (menuItems) => {
               <ul>
                 {filteredSidebarData?.map((mainLabel, index) => (
                   <li className="submenu-open" key={index}>
-                    {/* Show header for section menus */}
+                
                     {mainLabel.submenu_hdr && (
                       <h6 className="submenu-hdr">{mainLabel.submenu_hdr}</h6>
                     )}
@@ -139,7 +109,7 @@ const filterMenuByPermission = (menuItems) => {
                             )}
                           </Link>
 
-                          {/* Second Level Submenu */}
+                   
                           {title?.submenuItems && title.submenuItems.length > 0 && (
                             <ul
                               style={{
@@ -169,7 +139,7 @@ const filterMenuByPermission = (menuItems) => {
                                     )}
                                   </Link>
 
-                                  {/* Third Level Submenu */}
+                                
                                   {item?.submenuItems && item.submenuItems.length > 0 && (
                                     <ul
                                       style={{

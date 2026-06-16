@@ -30,22 +30,20 @@ const RolesPermissions = () => {
   const data = useSelector((state) => state.toggle_header);
   // const { isAdmin, hasPermission } = usePermissions();
 
-  // State management
+
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
 
-  // Filter states
   const [filters, setFilters] = useState({
     search: '',
     roleName: '',
     sortBy: 'date'
   });
 
-  // REMOVED: The duplicate authorization check in useEffect
-  // The RoleGuard wrapper handles this now
+
   useEffect(() => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (!token || token === 'undefined' || token === 'null') {
@@ -54,7 +52,7 @@ const RolesPermissions = () => {
     }
   }, [navigate]);
 
-  // Fetch roles from API
+
   const fetchRoles = async () => {
     setLoading(true);
     try {
@@ -63,11 +61,11 @@ const RolesPermissions = () => {
 
       console.log('Raw roles data:', rolesData);
 
-      // Process roles data - permissions are already in JSON format
+      
       const processedRoles = rolesData.map((role) => {
         let permissionCount = 0;
         
-        // Count permissions from the permissions object
+   
         if (role.permissions) {
           if (typeof role.permissions === 'string') {
             try {
@@ -91,24 +89,24 @@ const RolesPermissions = () => {
 
       console.log('Processed roles:', processedRoles);
 
-      // Apply filters
+
       let filteredRoles = processedRoles;
 
-      // Search filter
+    
       if (filters.search) {
         filteredRoles = filteredRoles.filter(role =>
           role.name?.toLowerCase().includes(filters.search.toLowerCase())
         );
       }
 
-      // Role name filter
+  
       if (filters.roleName) {
         filteredRoles = filteredRoles.filter(role =>
           role.name?.toLowerCase() === filters.roleName.toLowerCase()
         );
       }
 
-      // Date filter
+    
       if (selectedDate) {
         filteredRoles = filteredRoles.filter(role => {
           const roleDate = new Date(role.created_at || role.createdAt);
@@ -117,7 +115,7 @@ const RolesPermissions = () => {
         });
       }
 
-      // Sorting
+  
       if (filters.sortBy === 'newest') {
         filteredRoles.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
       } else if (filters.sortBy === 'oldest') {
@@ -152,7 +150,7 @@ const RolesPermissions = () => {
     // eslint-disable-next-line
   }, []);
 
-  // Refetch when filters change (debounced)
+  
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchRoles();
@@ -165,7 +163,7 @@ const RolesPermissions = () => {
     setIsFilterVisible((prevVisibility) => !prevVisibility);
   };
 
-  // Handle delete role
+  
   const handleDelete = async (roleId) => {
     const MySwal = withReactContent(Swal);
 
@@ -190,7 +188,7 @@ const RolesPermissions = () => {
               confirmButton: "btn btn-success",
             },
           });
-          fetchRoles(); // Refresh list
+          fetchRoles(); 
         } catch (error) {
           console.error('Delete error:', error);
           MySwal.fire({
@@ -203,22 +201,22 @@ const RolesPermissions = () => {
     });
   };
 
-  // Handle search
+
   const handleSearch = (e) => {
     setFilters(prev => ({ ...prev, search: e.target.value }));
   };
 
-  // Handle filter change
+  
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
   };
 
-  // Handle date change
+
   const handleDateChange = (date) => {
     setSelectedDate(date);
   };
 
-  // Handle refresh
+
   const handleRefresh = () => {
     setFilters({
       search: '',
@@ -229,12 +227,12 @@ const RolesPermissions = () => {
     fetchRoles();
   };
 
-  // Handle edit role
+  
   const handleEdit = (role) => {
     setSelectedRole(role);
   };
 
-  // Prepare dropdown options
+
   const sortOptions = [
     { value: "date", label: "Sort by Date" },
     { value: "newest", label: "Newest" },
@@ -329,8 +327,7 @@ const RolesPermissions = () => {
   }] : [])
     ]
 
-//   
-  // Wrap component in RoleGuard
+
   return (
     <RoleGuard 
       roles={['Admin', 'Super Admin']}
@@ -508,7 +505,7 @@ const RolesPermissions = () => {
                   </div>
                 </div>
 
-                {/* Table */}
+            
                 <div className="table-responsive">
                   {loading ? (
                     <div className="text-center p-4">

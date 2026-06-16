@@ -1,4 +1,3 @@
-//WITH DYNAMIC SEARCH 
 
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -23,7 +22,7 @@ const Header = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadEmailCount, setUnreadEmailCount] = useState(0);
   
-  // SEARCH STATE
+
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState({
@@ -40,7 +39,7 @@ const Header = () => {
   
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
-  // ==================== SEARCH FUNCTIONS ====================
+
   
 
 
@@ -82,7 +81,6 @@ const performSearch = useCallback(async (query) => {
   }
 }, []);
 
-  // Handle search input with debouncing
 
 const handleSearchChange = (e) => {
   const value = e.target.value;
@@ -108,7 +106,7 @@ const handleSearchChange = (e) => {
 };
 
 
-  // Clear search
+ 
   const handleClearSearch = () => {
     setSearchTerm('');
     setSearchResults({
@@ -121,7 +119,6 @@ const handleSearchChange = (e) => {
     setShowSearchDropdown(false);
   };
 
-  // Navigate to result
   const handleResultClick = (type, id) => {
     setShowSearchDropdown(false);
     setSearchTerm('');
@@ -137,7 +134,7 @@ const handleSearchChange = (e) => {
     navigate(routes[type] || '/dashboard');
   };
 
-  // Click outside to close dropdown
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target)) {
@@ -149,7 +146,7 @@ const handleSearchChange = (e) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Cleanup debounce timer
+
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) {
@@ -160,7 +157,7 @@ const handleSearchChange = (e) => {
 
   const totalResults = Object.values(searchResults).reduce((sum, arr) => sum + arr.length, 0);
 
-  // ==================== NOTIFICATION FUNCTIONS ====================
+
   
   const fetchNotifications = async () => {
     try {
@@ -243,8 +240,6 @@ const handleSearchChange = (e) => {
     );
     unreadEmailNotifs.forEach(n => markAsRead(n.id));
   };
-
-  // ==================== SIDEBAR FUNCTIONS ====================
 
   const slideDownSubmenu = () => {
     const subdropPlusUl = document.getElementsByClassName("subdrop");
@@ -435,7 +430,7 @@ const handleSearchChange = (e) => {
         </Link>
 
         <ul className="nav user-menu">
-          {/* ==================== DYNAMIC SEARCH ==================== */}
+     
           <li className="nav-item nav-searchinputs">
             <div className="top-nav-search" ref={searchDropdownRef}>
               <Link to="#" className="responsive-search">

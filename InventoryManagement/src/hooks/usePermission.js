@@ -160,9 +160,7 @@ export const usePermissions = () => {
     });
   }, [userRole]);
 
-  /**
-   * Check if user has permission for a specific module and action
-   */
+
   // const hasPermission = useCallback((module, action) => {
   //   if (!permissions) return false;
   //   if (!permissions[module]) return false;
@@ -185,18 +183,14 @@ export const usePermissions = () => {
 }, [permissions, hasRole]);
 
 
-  /**
-   * Check if user has ANY of the specified permissions
-   */
+
   const hasAnyPermission = useCallback((checks) => {
     return checks.some(check => 
       hasPermission(check.module, check.action)
     );
   }, [hasPermission]);
 
-  /**
-   * Check if user has ALL of the specified permissions
-   */
+ 
   const hasAllPermissions = useCallback((checks) => {
     return checks.every(check => 
       hasPermission(check.module, check.action)
@@ -205,9 +199,7 @@ export const usePermissions = () => {
 
 
 
-  /**
-   * Get all permissions for a specific module
-   */
+
   const getModulePermissions = useCallback((module) => {
     if (!permissions || !permissions[module]) return null;
     return permissions[module];

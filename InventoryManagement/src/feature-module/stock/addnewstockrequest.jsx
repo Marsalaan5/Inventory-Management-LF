@@ -33,7 +33,7 @@ const getPriorityCfg = (key) =>
   PRIORITY_CFG[(key || "").toLowerCase()] ||
   { color: "#6c757d", label: key || "—" };
 
-// Fallback priorities if DB enum can't be fetched
+
 const FALLBACK_PRIORITIES = Object.entries(PRIORITY_CFG).map(([k, v]) => ({
   value: k,
   label: v.label,
@@ -161,16 +161,16 @@ const AddNewStockRequest = () => {
   const navigate     = useNavigate();
   const headerToggle = useSelector((s) => s.toggle_header);
 
-  // Redux
+
   const createStatus = useSelector(selectReqCreateStatus);
   const reduxError   = useSelector(selectReqError);
 
-  // Articles from Redux (fetchUnfilteredArticles)
+ 
   const { article_list } = useSelector((state) => state.articles);
 
   const { users, loading: userLoading } = useUsers();
 
-  // ── Local form state ──────────────────────────────────────
+ 
   const [form, setForm] = useState({
     selected_user:       "",
     cc_recipients:       [],    
@@ -178,7 +178,7 @@ const AddNewStockRequest = () => {
     follow_up_selected:  true,
     follow_up_days:      2,
     escalation_selected: true,
-    escalation_days:     7,
+    escalation_days:     4,
     req_articles: [
       { article_profile_id: "", article_profile_name: "", quantity: 1 },
     ],
@@ -210,12 +210,12 @@ useEffect(() => {
 }, []);
 
 
-  // ── Load articles on mount ────────────────────────────────
+
   useEffect(() => {
     dispatch(fetchUnfilteredArticles({}));
   }, [dispatch]);
 
-  // ── Show error toast from Redux ───────────────────────────
+
   useEffect(() => {
     if (reduxError) {
       MySwal.fire({
@@ -235,7 +235,7 @@ useEffect(() => {
     label: a.title || a.article_profile_name || "Unnamed Article",
   }));
 
-  // ── Form helpers ──────────────────────────────────────────
+ 
   const set        = (field, val) => setForm((p) => ({ ...p, [field]: val }));
   const addItem    = ()           => set("req_articles", [
     ...form.req_articles,
@@ -298,8 +298,8 @@ useEffect(() => {
     }
 
   
-    const follow_up_days_val  = Math.min(form.follow_up_days,  7);
-    const escalation_days_val = Math.min(form.escalation_days, 7);
+    const follow_up_days_val  = Math.min(form.follow_up_days,  2);
+    const escalation_days_val = Math.min(form.escalation_days, 4);
 
     try {
       await dispatch(createStockRequest({
@@ -313,7 +313,7 @@ useEffect(() => {
         escalation_selected: form.escalation_selected,
         escalation_days:     form.escalation_selected ? escalation_days_val : null,
         req_articles:        validItems,
-      })).unwrap();
+      })).unwrap(); 
 
       MySwal.fire({
         icon: "success",
@@ -332,7 +332,7 @@ useEffect(() => {
     <div className="page-wrapper">
       <div className="content">
 
-        {/* ── Page Header ── */}
+
         <div className="page-header">
           <div className="add-item d-flex">
             <div className="page-title">

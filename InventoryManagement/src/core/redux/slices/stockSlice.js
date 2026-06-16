@@ -166,14 +166,21 @@ export const fetchSentRequests = createAsyncThunk(
   "stock/req/fetchSent",
   async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await AuthService.getStockRequests({ ...params });
+      const res = await AuthService.getStockRequests({
+        page_no:  params.page_no,
+        limit:    params.limit,
+        priority: params.priority,
+        status:   params.status,
+        search:   params.search,
+        starred:  params.starred,
+      });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
     }
   },
 );
-
+ 
 export const fetchApprovedRequests = createAsyncThunk(
   "stock/req/fetchApproved",
   async (params = {}, { rejectWithValue }) => {
@@ -198,6 +205,65 @@ export const fetchStarredRequests = createAsyncThunk(
   },
 );
 
+// export const fetchStockRequestStats = createAsyncThunk(
+//   "stock/req/fetchStats",
+//   async (_, { rejectWithValue }) => {
+//     try {
+//       const res = await AuthService.getStockRequestStats();
+//       return res.data.data;
+//     } catch (err) {
+//       console.warn("getStockRequestStats not available, using fallback:", err.message);
+//       try {
+        
+      
+    
+//         // const received = items.filter((r) => r.is_delivered).length;
+//         // return { total, pending, approved, rejected: 0, received };
+   
+//   const listRes = await AuthService.getStockRequests({
+//     page_no: 1,
+//     limit: 100,
+//   });
+
+//   const items = listRes.data.data || [];
+
+//   const total = listRes.data.total_records || items.length;
+
+//   const pending = items.filter((r) => !r.is_approved).length;
+
+//   const approved = items.filter(
+//     (r) =>
+//       r.is_approved === true &&
+//       r.is_stock_submitted === false &&
+//       r.is_delivered === false
+//   ).length;
+
+//   const in_transit = items.filter(
+//     (r) =>
+//       r.is_stock_submitted === true &&
+//       r.is_delivered === false
+//   ).length;
+
+//   const received = items.filter(
+//     (r) => r.is_delivered === true
+//   ).length;
+
+//   return {
+//     total,
+//     pending,
+//     approved,
+//     in_transit,
+//     received,
+//     rejected: 0,
+//   };
+// } catch (fallbackErr) {
+//   return rejectWithValue(fallbackErr.message);
+// }
+//     }
+//   },
+// );
+
+
 export const fetchStockRequestStats = createAsyncThunk(
   "stock/req/fetchStats",
   async (_, { rejectWithValue }) => {
@@ -205,56 +271,11 @@ export const fetchStockRequestStats = createAsyncThunk(
       const res = await AuthService.getStockRequestStats();
       return res.data.data;
     } catch (err) {
-      console.warn("getStockRequestStats not available, using fallback:", err.message);
-      try {
-        
-      
-    
-        // const received = items.filter((r) => r.is_delivered).length;
-        // return { total, pending, approved, rejected: 0, received };
-   
-  const listRes = await AuthService.getStockRequests({
-    page_no: 1,
-    limit: 100,
-  });
-
-  const items = listRes.data.data || [];
-
-  const total = listRes.data.total_records || items.length;
-
-  const pending = items.filter((r) => !r.is_approved).length;
-
-  const approved = items.filter(
-    (r) =>
-      r.is_approved === true &&
-      r.is_stock_submitted === false &&
-      r.is_delivered === false
-  ).length;
-
-  const in_transit = items.filter(
-    (r) =>
-      r.is_stock_submitted === true &&
-      r.is_delivered === false
-  ).length;
-
-  const received = items.filter(
-    (r) => r.is_delivered === true
-  ).length;
-
-  return {
-    total,
-    pending,
-    approved,
-    in_transit,
-    received,
-    rejected: 0,
-  };
-} catch (fallbackErr) {
-  return rejectWithValue(fallbackErr.message);
-}
+      return rejectWithValue(err.response?.data?.message || err.message);
     }
   },
 );
+
 
 export const fetchStockRequestPriorities = createAsyncThunk(
   "stock/req/fetchPriorities",
@@ -309,11 +330,11 @@ export const respondToStockRequest = createAsyncThunk(
   },
 );
 
-export const markStockRequestReceived = createAsyncThunk(
+export const markStockReceived = createAsyncThunk(
   "stock/req/markReceived",
   async ({ id, notes }, { rejectWithValue }) => {
     try {
-      const res = await AuthService.markStockRequestReceived(id, { notes });
+      const res = await AuthService.markStockReceived(id, { notes });
       return { id, ...res.data };
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || err.message);
@@ -345,9 +366,7 @@ export const markStockRequestRead = createAsyncThunk(
   },
 );
 
-// ═══════════════════════════════════════════════════════════════════
-//  SHARED HELPERS
-// ═══════════════════════════════════════════════════════════════════
+
 
 const patchFlow = (state, stock_id, patch) => {
   const idx = state.flow.list.findIndex((sf) => sf.stock_id === stock_id);
@@ -361,7 +380,7 @@ const applyReqList = (state, viewKey, payload, sentFilters) => {
   const totalRecords = payload.total_records ?? items.length;
   const page         = sentFilters?.page_no ?? 1;
   const limit        = sentFilters?.limit ?? state.req.filters.limit;
-  const totalPages   = limit > 0 ? Math.ceil(totalRecords / limit) : 1;
+  const totalPages   = limit > 0 ? Math.max(1, Math.ceil(totalRecords / limit)) : 1;
   state.req[viewKey].items      = items;
   state.req[viewKey].pagination = { currentPage: page, totalPages, total: totalRecords };
   state.req[viewKey].loading    = false;
@@ -636,13 +655,13 @@ const stockSlice = createSlice({
       })
       .addCase(respondToStockRequest.rejected,  (s, { payload }) => { s.req.respondStatus = "failed"; s.req.error = payload; })
 
-      .addCase(markStockRequestReceived.pending,   (s) => { s.req.receiveStatus = "loading"; })
-      .addCase(markStockRequestReceived.fulfilled, (s, { payload }) => {
+      .addCase(markStockReceived.pending,   (s) => { s.req.receiveStatus = "loading"; })
+      .addCase(markStockReceived.fulfilled, (s, { payload }) => {
         s.req.receiveStatus        = "succeeded";
         s.req.ui.receiveTarget     = null;
         patchReq(s, payload.id, { received_at: payload.received_at, receiver_notes: payload.receiver_notes });
       })
-      .addCase(markStockRequestReceived.rejected,  (s, { payload }) => { s.req.receiveStatus = "failed"; s.req.error = payload; })
+      .addCase(markStockReceived.rejected,  (s, { payload }) => { s.req.receiveStatus = "failed"; s.req.error = payload; })
 
       .addCase(toggleStockRequestStar.rejected, (s, { meta }) => {
         patchReq(s, meta.arg.id, { is_starred: !meta.arg.starred });

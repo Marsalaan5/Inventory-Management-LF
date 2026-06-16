@@ -8,7 +8,7 @@ import { dashboarrecentproductddata } from '../../json/dashboarddata';
 import { expiredproductdata } from '../../json/dashboardexpiredproduct';
 import { salestransaction } from '../../json/salesdashboardrecenttranscation';
 
-// Async thunks to fetch data from backend APIs
+
 export const fetchRecentProducts = createAsyncThunk(
   'dashboard/fetchRecentProducts',
   async () => {

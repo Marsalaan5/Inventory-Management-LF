@@ -1,17 +1,11 @@
 
-// ============================================
-// PermissionGuard Component
-// components/PermissionGuard.jsx
-
 
 import React from 'react';
 import { usePermissions } from '../hooks/usePermission'; 
 import { Alert } from 'react-bootstrap';
 import PropTypes from 'prop-types';
 
-/**
- * Component to conditionally render content based on permissions
- */
+
 export const PermissionGuard = ({ 
   module, 
   action, 

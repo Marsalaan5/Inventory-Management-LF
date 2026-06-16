@@ -47,7 +47,7 @@ const Permissions = () => {
   const fetchRoles = async () => {
     try {
       const response = await AuthService.getRoles();
-      // Handle both response formats: response.data.roles or response.data
+    
       const rolesData = response.data.roles || response.data;
       
       const roleOptions = rolesData.map(role => ({
@@ -56,7 +56,7 @@ const Permissions = () => {
       }));
       setRoles(roleOptions);
       
-      // Auto-select first role
+     
       if (roleOptions.length > 0) {
         setSelectedRole(roleOptions[0]);
       }
@@ -72,23 +72,23 @@ const Permissions = () => {
       const response = await AuthService.getModules();
       console.log('Modules response:', response);
       
-      // Handle nested response format
+     
       let modulesData = [];
       
       if (response.data && response.data.data) {
-        // Response format: { data: { data: [...] } }
+      
         modulesData = response.data.data;
       } else if (response.data && Array.isArray(response.data)) {
-        // Response format: { data: [...] }
+       
         modulesData = response.data;
       } else if (Array.isArray(response)) {
-        // Direct array
+        
         modulesData = response;
       }
       
       console.log('Processed modules:', modulesData);
       
-      // Ensure it's an array
+    
       if (!Array.isArray(modulesData)) {
         console.error('Modules data is not an array:', modulesData);
         modulesData = [];
@@ -113,29 +113,29 @@ const Permissions = () => {
       const response = await AuthService.getPermissionsByRole(roleId);
       console.log('Raw response:', response);
       
-      // Handle nested response format
+     
       let permissionsData = [];
       
       if (response.data && response.data.data) {
-        // Response format: { data: { data: [...] } }
+       
         permissionsData = response.data.data;
       } else if (response.data && Array.isArray(response.data)) {
-        // Response format: { data: [...] }
+      
         permissionsData = response.data;
       } else if (Array.isArray(response)) {
-        // Direct array
+  
         permissionsData = response;
       }
       
       console.log('Processed permissions data:', permissionsData);
       
-      // Ensure it's an array
+    
       if (!Array.isArray(permissionsData)) {
         console.error('Permissions data is not an array:', permissionsData);
         permissionsData = [];
       }
       
-      // Create permission map
+    
       const permMap = {};
       permissionsData.forEach(perm => {
         permMap[perm.module] = {
@@ -143,13 +143,14 @@ const Permissions = () => {
           can_create: Boolean(perm.can_create),
           can_edit: Boolean(perm.can_edit),
           can_delete: Boolean(perm.can_delete),
-          can_view: Boolean(perm.can_view)
+          can_view: Boolean(perm.can_view),
+          can_review: Boolean(perm.can_review)
         };
       });
 
       console.log('Permission map:', permMap);
 
-      // Ensure all modules have entries
+    
       const allPerms = modules.map(module => {
         if (permMap[module]) {
           return permMap[module];
@@ -159,7 +160,8 @@ const Permissions = () => {
           can_create: false,
           can_edit: false,
           can_delete: false,
-          can_view: false
+          can_view: false,
+          can_review: false
         };
       });
 
@@ -193,7 +195,8 @@ const Permissions = () => {
               can_create: checked,
               can_edit: checked,
               can_delete: checked,
-              can_view: checked
+              can_view: checked,
+              can_review: checked
             }
           : perm
       )
@@ -207,7 +210,8 @@ const Permissions = () => {
         can_create: checked,
         can_edit: checked,
         can_delete: checked,
-        can_view: checked
+        can_view: checked,
+        can_review: checked
       }))
     );
   };
@@ -221,19 +225,20 @@ const Permissions = () => {
     try {
       setSaving(true);
       
-      // Format permissions for API - ensure all boolean values
+    
       const formattedPermissions = permissions.map(perm => ({
         module: perm.module,
         can_create: Boolean(perm.can_create),
         can_edit: Boolean(perm.can_edit),
         can_delete: Boolean(perm.can_delete),
-        can_view: Boolean(perm.can_view)
+        can_view: Boolean(perm.can_view),
+        can_review: Boolean(perm.can_review)
       }));
 
       await AuthService.updatePermissions(selectedRole.value, formattedPermissions);
       alert('Permissions updated successfully!');
       
-      // Refresh permissions
+    
       fetchPermissions(selectedRole.value);
     } catch (error) {
       console.error('Error updating permissions:', error);
@@ -247,7 +252,7 @@ const Permissions = () => {
     setIsFilterVisible(!isFilterVisible);
   };
 
-  // Filter permissions based on search
+ 
   const filteredPermissions = searchTerm
     ? permissions.filter(p => p.module.toLowerCase().includes(searchTerm.toLowerCase()))
     : permissions;
@@ -399,6 +404,7 @@ const Permissions = () => {
                         <th>Edit</th>
                         <th>Delete</th>
                         <th>View</th>
+                        <th>Review</th>
                         <th className="no-sort">Allow all</th>
                       </tr>
                     </thead>
@@ -471,11 +477,24 @@ const Permissions = () => {
                               <label className="checkboxs">
                                 <input
                                   type="checkbox"
+                                  checked={perm.can_review}
+                                  onChange={(e) =>
+                                    handlePermissionChange(perm.module, 'can_review', e.target.checked)
+                                  }
+                                />
+                                <span className="checkmarks" />
+                              </label>
+                            </td>
+                            <td>
+                              <label className="checkboxs">
+                                <input
+                                  type="checkbox"
                                   checked={
                                     perm.can_create &&
                                     perm.can_edit &&
                                     perm.can_delete &&
-                                    perm.can_view
+                                    perm.can_view &&
+                                    perm.can_review
                                   }
                                   onChange={(e) =>
                                     handleAllowAll(perm.module, e.target.checked)

@@ -1,6 +1,4 @@
 
-// In Wh Location is also mandatory with article profile,status
-
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Select from "react-select";
@@ -1136,7 +1134,7 @@ const LotUploadInBulk = () => {
 
              
 
-              {/* In WH Location - NOT LOCKED */}
+       
               <div className="col-lg-3">
                 <div className="mb-3">
                   <label className="form-label">In WH Location</label>

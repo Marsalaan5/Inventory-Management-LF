@@ -249,7 +249,7 @@ import { getActivities, getActivitiesStats } from "../controller/activityControl
 import { createArticle, getArticle } from "../controller/articleController.js";
 import { createGLossary, editGlossary, getGlossaries, getGlossaryById } from "../controller/glossaryController.js";
 
-import { stock_transfer_submit,stock_transfer_sync } from "../controller/stockController.js";
+// import { stock_transfer_submit,stock_transfer_sync } from "../controller/stockController.js";
 
 const router = express.Router();
 
@@ -386,8 +386,8 @@ router.post('/bulk-create-with-lot', authenticateToken, bulkCreateProductsWithLo
 // =========================
 
 // Get options
-router.post('/stockFlowSync',authenticateToken,checkPermission('StockFlow', 'create'), stock_transfer_sync);
-router.post('/stockFlowSubmit',authenticateToken,checkPermission('StockFlow', 'create'), stock_transfer_submit);
+// router.post('/stockFlowSync',authenticateToken,checkPermission('StockFlow', 'create'), stock_transfer_sync);
+// router.post('/stockFlowSubmit',authenticateToken,checkPermission('StockFlow', 'create'), stock_transfer_submit);
 // router.get('/getStockFlowOptions',authenticateToken,checkPermission('StockFlow', 'view'), getStockFlowOptions);
 // router.get('/getStockFlows',authenticateToken,checkPermission('StockFlow', 'view'),getStockFlows);
 // router.get('/getStockFlowStats/stats',applyWarehouseFilter,checkPermission('StockFlow', 'view'),getStockFlowStats);

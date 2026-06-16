@@ -30,13 +30,13 @@ const HorizontalSidebar = () => {
     setOpenMenus(newOpenMenus);
   };
 
-  // Render icon
+  
   const renderIcon = (iconName) => {
     if (!iconName) return null;
     return getIconComponent(iconName);
   };
 
-  // Recursive function to render menu items
+ 
   const renderMenuItems = (items, parentKey = '', level = 0) => {
     if (!items || items.length === 0) return null;
 
@@ -57,7 +57,7 @@ const HorizontalSidebar = () => {
               onClick={() => level === 0 ? toggleTopLevelMenu(menuKey) : toggleMenu(menuKey)}
               className={`${isOpen ? 'subdrop' : ''} ${item.icon ? 'has-icon' : ''}`}
             >
-              {/*  Show icon at all levels */}
+             
               {item.icon && renderIcon(item.icon)}
               <span>{item.label || item.title}</span>
               <span className={`menu-arrow ${level > 0 ? 'inside-submenu' : ''} ${level > 1 ? 'inside-submenu-two' : ''}`} />
@@ -75,7 +75,7 @@ const HorizontalSidebar = () => {
             to={item.path || '#'}
             className={`${isActive ? 'active' : ''} ${item.icon ? 'has-icon' : ''}`}
           >
-            {/*  Show icon at all levels */}
+         
             {item.icon && renderIcon(item.icon)}
             <span>{item.label || item.title}</span>
           </Link>
@@ -88,7 +88,7 @@ const HorizontalSidebar = () => {
     return null;
   }
 
-  // Get top-level menu items (parent_id is null)
+ 
   const topLevelMenus = menuData.filter(item => item.parent_id === null || !item.path);
 
   return (

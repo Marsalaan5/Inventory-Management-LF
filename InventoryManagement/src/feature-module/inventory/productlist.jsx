@@ -581,22 +581,20 @@ const ProductList = () => {
     { value: "count:DESC", label: "Quantity High to Low" },
   ];
 
-  const statusOptions = [
-    { value: "", label: "All Status" },
-    { value: "new", label: "New" },
-    { value: "used", label: "Used" },
-    { value: "repaired", label: "Repaired" },
-    { value: "broken", label: "Broken" },
-    { value: "installed", label: "Installed" },
-  ];
+const statusOptions = [
+  { value: "", label: "All Status" },
+  { value: "good", label: "Good" },
+  { value: "faulty", label: "Faulty" },
+  { value: "broken/burnt", label: "Broken/Burnt" },
+  { value: "in-use", label: "In Use" },
+];
 
-  const editStatusOptions = [
-    { value: "new", label: "New" },
-    { value: "used", label: "Used" },
-    { value: "repaired", label: "Repaired" },
-    { value: "broken", label: "Broken" },
-    { value: "installed", label: "Installed" },
-  ];
+const editStatusOptions = [
+  { value: "good", label: "Good" },
+  { value: "faulty", label: "Faulty" },
+  { value: "broken/burnt", label: "Broken/Burnt" },
+  { value: "in-use", label: "In Use" },
+];
 
   const columns = [
     // {
@@ -783,22 +781,22 @@ const ProductList = () => {
       title: "Status",
       dataIndex: "status",
       render: (text) => (
-        <span
-          className={`badge ${
-            text === "new"
-              ? "badge-linesuccess"
-              : text === "used"
-                ? "badge-lineinfo"
-                : text === "repaired"
-                  ? "badge-linewarning"
-                  : text === "broken"
-                    ? "badge-linedanger"
-                    : "badge-secondary"
-          }`}
-        >
-          {text}
-        </span>
-      ),
+  <span
+    className={`badge ${
+      text === "good"
+        ? "badge-linesuccess"
+        : text === "faulty"
+          ? "badge-linewarning"
+          : text === "broken/burnt"
+            ? "badge-linedanger"
+            : text === "in-use"
+              ? "badge-lineinfo"
+              : "badge-secondary"
+    }`}
+  >
+    {text}
+  </span>
+),
       sorter: (a, b) => (a.status || "").localeCompare(b.status || ""),
     },
     {

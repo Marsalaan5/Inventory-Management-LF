@@ -191,7 +191,7 @@ const Users = () => {
 
 
 
-    // Initialize in correct order
+    
     useEffect(() => {
         const initializeData = async () => {
             console.log(" Starting initialization...");
@@ -231,7 +231,7 @@ const Users = () => {
         initializeData();
     }, []);
 
-    // Fetch users after roles and currentUser are loaded
+  
     useEffect(() => {
         if (roles.length > 0 && currentUser && !initializing) {
             console.log("Fetching users...");
@@ -251,7 +251,7 @@ const Users = () => {
         // eslint-disable-next-line
     }, [filters.search]);
 
-    // IMMEDIATE FILTER - Other filters trigger immediately
+
     useEffect(() => {
         if (roles.length > 0 && !initializing) {
             fetchUsers();
@@ -263,7 +263,7 @@ const Users = () => {
         setIsFilterVisible(prev => !prev);
     };
 
-    // Delete user
+
     const handleDelete = async (userId) => {
         const MySwal = withReactContent(Swal);
 
@@ -358,7 +358,7 @@ const resetFiltersHandler = () => {
     ];
 
 
-    // Table columns
+  
     const columns = [
         {
             title: "Name",

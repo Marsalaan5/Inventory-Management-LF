@@ -8,22 +8,7 @@ import ImageWithBasePath from '../core/img/imagewithbasebath';
 import { exportPDF, exportExcel, refreshData } from '../utils/exports';
 import { DateTime } from 'luxon';
 
-/**
- * Reusable Table Header Actions Component
- * 
- * @param {Object} props
- * @param {Function} props.onRefresh - Function to refresh data
- * @param {string} props.pdfEndpoint - PDF export API endpoint
- * @param {string} props.excelEndpoint - Excel export API endpoint
- * @param {object} props.filters - Current filters to pass to export
- * @param {string} props.entityName - Name of entity for filename (e.g., 'products', 'users', 'warehouses')
- * @param {Function} props.dispatch - Redux dispatch function
- * @param {boolean} props.headerState - Current header toggle state
- * @param {Function} props.headerAction - Redux action for header toggle
- * @param {boolean} props.showPdf - Show PDF button (default: true)
- * @param {boolean} props.showExcel - Show Excel button (default: true)
- * @param {boolean} props.showPrint - Show Print button (default: false)
- */
+
 const TableHeaderActions = ({
   onRefresh,
   pdfEndpoint,

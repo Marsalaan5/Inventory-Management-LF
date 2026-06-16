@@ -54,7 +54,7 @@ const toTransportOption = (v) =>
     label: String(v).split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
   };
 
-// =============================================================================
+
 const AddStockFlow = () => {
   const dispatch     = useDispatch();
   const navigate     = useNavigate();
@@ -125,7 +125,7 @@ const AddStockFlow = () => {
   const billFileRef   = useRef(null);
   const billFileState = useRef(null);
 
-  // ── Debounce refs for description and qty changes ──────────────
+
   const descSyncTimer = useRef(null);
   const qtySyncTimer  = useRef(null);
 
@@ -137,7 +137,7 @@ const AddStockFlow = () => {
   const fromStockRequest = location.state?.fromStockRequest;
   const preselected      = location.state?.request;
 
-  // ── Derived
+
   const totalQty = useMemo(
     () => scannedProducts.reduce((s, p) => s + (parseInt(p.quantity_to_transfer) || 0), 0),
     [scannedProducts],
@@ -182,7 +182,7 @@ const AddStockFlow = () => {
     quantity_to_transfer: p.transferable_count    ?? p.count ?? 1,
   });
 
-  // ── applyDraftToState
+
   const applyDraftToState = (lot, message = null) => {
     setStockId(lot.stock_id);
 
@@ -225,7 +225,7 @@ const AddStockFlow = () => {
     }
   };
 
-  // ── restoreDraftByRequestId
+
   const restoreDraftByRequestId = async (requestId) => {
     if (!requestId) return;
     restoringDraftRef.current = true;
@@ -304,7 +304,7 @@ const AddStockFlow = () => {
     // eslint-disable-next-line
   }, [formData.stock_request_id, formData.transport]);
 
-  // ── loadTransportOptions
+  
   const loadTransportOptions = async () => {
     try {
       const res     = await AuthService.getStockFlowOptions();
@@ -319,7 +319,7 @@ const AddStockFlow = () => {
   };
 
 
-  // ── syncToDb ─────────────────────────────────────────────────────
+  // ── syncToDb 
   const syncToDb = useCallback(async (products, overrideFormData = null) => {
     const fd       = overrideFormData || formDataRef.current;
     const tOptions = transportOptionsRef.current;
@@ -671,7 +671,7 @@ const handleDeleteProduct = useCallback(
 );
 
 
-  // ── handleRemoveSelected — bulk removal
+
   const handleRemoveSelected = useCallback((selectedUuids) => {
     MySwal.fire({
       title:              `Remove ${selectedUuids.length} product(s)?`,
@@ -704,7 +704,7 @@ const handleDeleteProduct = useCallback(
   );
 }
  else {
-          // Sync the trimmed list to replace product_arr server-side
+        
           const fd       = formDataRef.current;
           const tOptions = transportOptionsRef.current;
           const syncReady = !!(fd.stock_request_id && (fd.transport || tOptions[0]));
@@ -718,78 +718,9 @@ const handleDeleteProduct = useCallback(
     // eslint-disable-next-line
   }, [syncToDb]);
 
-  // ── handleDiscardDraft
-  // const handleDiscardDraft = () => {
-  //   MySwal.fire({
-  //     title:              "Discard entire draft?",
-  //     text:               "All scanned products will be removed.",
-  //     icon:               "warning",
-  //     showCancelButton:   true,
-  //     confirmButtonColor: "#d33",
-  //     confirmButtonText:  "Yes, discard",
-  //   }).then(async (result) => {
-  //     if (!result.isConfirmed) return;
-  //     try {
-  //       if (currentStockIdRef.current) {
-  //         await AuthService.autoRemoveStock(currentStockIdRef.current);
-  //       }
-  //       resetDraftState();
-  //       toast( "info",
-  // "Draft Discarded",
-  // res?.data?.message || res?.message || "Stock data removed successfully")
-  //     } catch (err) {
-  //       toast("error", "Error", err.response?.data?.message || "Failed to discard.", 3000);
-  //     }
-  //   });
-  // };
 
 
-//   const handleDiscardDraft = () => {
-//   MySwal.fire({
-//     title: "Discard entire draft?",
-//     text: "All scanned products will be removed.",
-//     icon: "warning",
-//     showCancelButton: true,
-//     confirmButtonColor: "#d33",
-//     confirmButtonText: "Yes, discard",
-//   }).then(async (result) => {
-//     if (!result.isConfirmed) return;
-
-//     try {
-//       let resMessage;
-
-//       if (currentStockIdRef.current) {
-//         const res = await AuthService.autoRemoveStock(
-//           currentStockIdRef.current
-//         );
-
-//         resMessage =
-//           res?.data?.message ||
-//           res?.message;
-//       }
-
-//       resetDraftState();
-
-//       toast(
-//         "info",
-//         "Draft Discarded",
-//         resMessage || "Stock data removed successfully"
-//       );
-//     } catch (err) {
-//       const msg =
-//         typeof err === "string"
-//           ? err
-//           : err?.response?.data?.message ||
-//             err?.message ||
-//             "Failed to discard.";
-
-//       toast("error", "Error", msg, 3000);
-//     }
-//   });
-// };
-
-
-  // ── handleQtyChange —  
+   
   const handleQtyChange = useCallback((prod_uuid, newQty) => {
     setScanned((prev) => {
       const updated = prev.map((p) => {
@@ -818,7 +749,7 @@ const handleDeleteProduct = useCallback(
     });
   }, [syncToDb]);
 
-  // ── handleDescriptionChange — 
+ 
   const handleDescriptionChange = useCallback((e) => {
     const val = e.target.value;
     setField("description", val);
@@ -835,7 +766,7 @@ const handleDeleteProduct = useCallback(
     }, 800);
   }, [syncToDb]); // eslint-disable-line
 
-  // ── Bill / Invoice 
+
   const handleBillChange = useCallback((e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -878,7 +809,7 @@ const handleDeleteProduct = useCallback(
     }
   }, [syncToDb]);
 
-  // ── handleSubmit
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setProductErrors([]);
@@ -969,7 +900,7 @@ const handleDeleteProduct = useCallback(
     }
   };
 
-  // ── Table
+  
   const columns = useMemo(() => {
     const errorMap = Object.fromEntries(productErrors.map((e) => [e.prod_uuid, e.errors]));
     return [
@@ -1085,34 +1016,7 @@ const handleDeleteProduct = useCallback(
           </div>
         )}
 
-        {/* Active Draft Banner */}
-        {/* {!loadingDraft && syncInfo && (
-          <div className="alert alert-warning d-flex flex-column mb-3">
-            <div className="d-flex align-items-center mb-2 gap-2">
-              <RefreshCw size={16} className="me-2" />
-              <strong>Active Draft:</strong> <b> Stock ID : </b>
-              <span className="ms-2 badge badge-warning">{syncInfo.stock_id}</span>
-              {isSyncing && <span className="spinner-border spinner-border-sm ms-2 text-muted" />} 
-               {syncInfo.stock_req_id     && <div><b>| Request ID:</b>  {syncInfo.stock_req_id}</div>} 
-              {syncInfo.source_name      && <div><b>| From:</b>     {syncInfo.source_name}</div>} 
-              {syncInfo.destination_name && <div><b>| To:</b>       {syncInfo.destination_name}</div>}
-            </div> */}
-            {/* <div className="small">
-             
-              {syncInfo.supplier_name    && <div><b>Supplier:</b> {syncInfo.supplier_name}</div>}
-              {syncInfo.recipient_name   && <div><b>Recipient:</b>{syncInfo.recipient_name}</div>}
-            </div> */}
-            {/* {scannedProducts.length > 0 && (
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-danger mt-2 align-self-start"
-                onClick={handleDiscardDraft}
-              >
-                <Trash2 size={14} className="me-1" />Discard Draft
-              </button>
-            )} */}
-          {/* </div>
-        )} */}
+
 
         {!loadingDraft && syncInfo?.stock_id && (
   <div className="alert alert-warning d-flex flex-column mb-3">
@@ -1320,7 +1224,7 @@ const handleDeleteProduct = useCallback(
               </div>
             </div>
 
-            {/* Bill / Invoice */}
+            {/* Invoice */}
             <div className="row">
               <div className="col-lg-6">
                 <label className="form-label">
@@ -1475,7 +1379,7 @@ const handleDeleteProduct = useCallback(
                   <Package size={18} className="me-2" />
                   Scanned Products ({scannedProducts.length})
                   {isSyncing && (
-                    <span className="spinner-border spinner-border-sm ms-2 text-muted" style={{ width: "14px", height: "14px" }} />
+                    <span className="spinner-border spi nner-border-sm ms-2 text-muted" style={{ width: "14px", height: "14px" }} />
                   )}
                 </h5>
                 <button
@@ -1492,6 +1396,7 @@ const handleDeleteProduct = useCallback(
             </div>
           </div>
         )}
+
 
         {/* Transfer Summary */}
         {scannedProducts.length > 0 && (
@@ -1515,6 +1420,7 @@ const handleDeleteProduct = useCallback(
           // </div>
         )}
 
+
         {/* Submit / Cancel */}
         <div className="col-lg-12">
           <div className="btn-addproduct mb-4">
@@ -1532,7 +1438,7 @@ const handleDeleteProduct = useCallback(
           </div>
         </div>
       </div>
-
+            
       {/* Article Profile Picker Modal */}
       <Modal
         show={profileModal.open}
@@ -1568,6 +1474,7 @@ const handleDeleteProduct = useCallback(
                 className="btn btn-outline-primary text-start w-100"
                 style={{ padding: "10px 14px" }}
                 onClick={async () => {
+                  
                   const code = profileModal.partial_code;
                   setProfileModal({ open: false, profiles: [], partial_code: "" });
                   await doScanAndAdd(code, profile.product_id);

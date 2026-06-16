@@ -1,6 +1,4 @@
 
-
-
 import PropTypes from "prop-types";
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
@@ -9,15 +7,12 @@ import withReactContent from "sweetalert2-react-content";
 import {
   ArrowLeft, Package, Truck, MapPin, Calendar,
   User, FileText, CheckCircle, Clock, AlertCircle,
-  Send, ThumbsUp, Mail,
+  Send, ThumbsUp, ThumbsDown, Mail,
 } from "feather-icons-react/build/IconComponents";
 import AuthService from "../../services/authService";
 
 const MySwal = withReactContent(Swal);
 
-// ─────────────────────────────────────────────────────────────
-//  Config helpers
-// ─────────────────────────────────────────────────────────────
 
 const PRIORITY_CFG = {
   urgent:   { color: "#dc3545", badge: "badge-linedanger",  label: "Urgent"   },
@@ -25,16 +20,32 @@ const PRIORITY_CFG = {
   low:      { color: "#198754", badge: "badge-linesuccess", label: "Low"      },
 };
 
+
+
 const STATUS_CFG = {
-  "Pending for Approval":           { badge: "badge-linewarning", alertVariant: "warning", icon: "clock"  },
-  "Followed Up for Approval":       { badge: "badge-lineinfo",    alertVariant: "info",    icon: "clock"  },
-  "Escalated Due to No Approval":   { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert"  },
-  "Scheduled":                      { badge: "badge-linesuccess", alertVariant: "success", icon: "check"  },
-  "Shipping Deadline Approaching":  { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert"  },
-  "In Transit":                     { badge: "badge-lineinfo",    alertVariant: "info",    icon: "truck"  },
-  "Delivered":                      { badge: "badge-linesuccess", alertVariant: "success", icon: "check"  },
-  "Resolution required":            { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert"  },
+ 
+  "Pending for Approval":                { badge: "badge-linewarning", alertVariant: "warning", icon: "clock" },
+  "Followed Up — Awaiting Approval":     { badge: "badge-lineinfo",    alertVariant: "info",    icon: "clock" },
+  "Matter Escalated":                    { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert" },
+
+
+  "Action Required":                     { badge: "badge-linewarning", alertVariant: "warning", icon: "alert" },
+  "Awaiting Dispatch — Follow-Up Sent":  { badge: "badge-lineinfo",    alertVariant: "info",    icon: "clock" },
+  "Dispatch Scheduled":                  { badge: "badge-linesuccess", alertVariant: "success", icon: "check" },
+  "Dispatch Planned":                    { badge: "badge-lineinfo",    alertVariant: "info",    icon: "clock" },
+  "Shipping Deadline Approaching":       { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert" },
+
+
+  "Preparing Shipment":                  { badge: "badge-lineinfo",    alertVariant: "info",    icon: "truck" },
+  "In-Transit":                          { badge: "badge-lineinfo",    alertVariant: "info",    icon: "truck" },
+
+
+  "Delivered":                           { badge: "badge-linesuccess", alertVariant: "success", icon: "check" },
+  "Request Closed":                      { badge: "badge-linesuccess", alertVariant: "success", icon: "check" },
+  "Resolution required":                 { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert" },
+  "Rejected":                            { badge: "badge-linedanger",  alertVariant: "danger",  icon: "alert" },
 };
+
 
 const getPriorityCfg = (key) =>
   PRIORITY_CFG[(key || "").toLowerCase()] ||
@@ -52,9 +63,6 @@ const fmtDate = (dt) =>
       })
     : "—";
 
-// ─────────────────────────────────────────────────────────────
-//  Sub-components
-// ─────────────────────────────────────────────────────────────
 
 const StatusIcon = ({ icon, size = 16 }) => {
   if (icon === "truck") return <Truck size={size} />;
@@ -64,9 +72,6 @@ const StatusIcon = ({ icon, size = 16 }) => {
 };
 StatusIcon.propTypes = { icon: PropTypes.string, size: PropTypes.number };
 
-// ─────────────────────────────────────────────────────────────
-//  Main component
-// ─────────────────────────────────────────────────────────────
 
 const StockRequestDetails = () => {
   const { id }   = useParams();
@@ -77,6 +82,7 @@ const StockRequestDetails = () => {
   const [loading,       setLoading]       = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
+ 
   const fetchDetails = useCallback(async () => {
     try {
       setLoading(true);
@@ -99,92 +105,35 @@ const StockRequestDetails = () => {
   useEffect(() => { fetchDetails(); }, [fetchDetails]);
 
 
-  const deriveStatus = (req) => {
-    if (!req) return "—";
-
-    if (req.delivered_at !== null && req.delivered_at !== undefined)
-      return "Delivered";
-
-    if (req.resolution_required_at !== null && req.resolution_required_at !== undefined)
-      return "Resolution required";
-
- 
-    if (req.stock_id !== null && req.stock_id !== undefined &&
-        req.submitted_at !== null && req.submitted_at !== undefined)
-      return "In Transit";
-
-    if (req.approved_at !== null && req.approved_at !== undefined) {
-      if (req.deadline_notice_at !== null && req.deadline_notice_at !== undefined)
-        return "Shipping Deadline Approaching";
-
-      return "Scheduled";
-    }
-
-    if (req.escalation_enabled &&
-        req.escalated_at !== null && req.escalated_at !== undefined)
-      return "Escalated Due to No Approval";
-
-    if (req.follow_up_enabled &&
-        req.follow_up_sent_at !== null && req.follow_up_sent_at !== undefined)
-      return "Followed Up for Approval";
-
-    return "Pending for Approval";
-  };
-
-  // ─────────────────────────────────────────────────────────────
-  //  Action handlers
-  // ─────────────────────────────────────────────────────────────
-
   const handleApprove = async () => {
-    const { value: totalDays, isConfirmed } = await MySwal.fire({
+    const { isConfirmed } = await MySwal.fire({
       title: "Approve Stock Request",
       html: `
         <p class="text-muted small mb-3">
-          Enter the number of days until scheduled dispatch.
+          Confirm approval of stock request <strong>${id}</strong>.
+          The dispatcher will be notified to schedule the dispatch.
         </p>
-        <div class="d-flex align-items-center justify-content-center gap-2">
-          <label class="form-label mb-0 fw-semibold">Dispatch in</label>
-          <input
-            id="swal-days"
-            type="number"
-            class="swal2-input"
-            placeholder="e.g. 3"
-            min="1"
-            max="50"
-            value="3"
-            style="width: 100px; margin: 0;"
-          />
-          <span class="fw-semibold">days</span>
-        </div>
       `,
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Approve",
       confirmButtonColor: "#198754",
       cancelButtonText: "Cancel",
-      preConfirm: () => {
-        const val = parseInt(document.getElementById("swal-days")?.value);
-        if (!val || val < 1 || val > 50) {
-          Swal.showValidationMessage("Enter a number between 1 and 50");
-          return false;
-        }
-        return val;
-      },
     });
 
     if (!isConfirmed) return;
 
     setActionLoading(true);
     try {
-      await AuthService.approveStockRequest(id, { total_days: totalDays });
+      await AuthService.reviewStockRequest(id, { decision: "approved" });
       MySwal.fire({
         icon: "success", title: "Approved!",
-        text: `Request approved. Scheduled dispatch in ${totalDays} day(s).`,
+        text: "Stock request approved successfully.",
         timer: 2500, showConfirmButton: false,
       });
       fetchDetails();
     } catch (err) {
-      console.error("approveStockRequest:", err);
+      console.error("reviewStockRequest approve:", err);
       MySwal.fire({
         icon: "error", title: "Error",
         text: err.response?.data?.message || "Failed to approve request.",
@@ -193,6 +142,76 @@ const StockRequestDetails = () => {
       setActionLoading(false);
     }
   };
+
+
+  const handleReject = async () => {
+    const { value: rejection_reason, isConfirmed } = await MySwal.fire({
+      title: "Reject Stock Request",
+      html: `
+        <p class="text-muted small mb-3">
+          Please provide a reason for rejecting stock request <strong>${id}</strong>.
+          This reason will be sent to the requester via email.
+        </p>
+        <textarea
+          id="swal-rejection-reason"
+          class="swal2-textarea"
+          placeholder="Enter rejection reason (required)…"
+          rows="4"
+          maxlength="255"
+          style="resize: vertical; font-size: 14px;"
+        ></textarea>
+        <div class="text-muted small mt-1 text-end" id="char-counter">0 / 255</div>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Reject Request",
+      confirmButtonColor: "#dc3545",
+      cancelButtonText: "Cancel",
+      didOpen: () => {
+        const ta      = document.getElementById("swal-rejection-reason");
+        const counter = document.getElementById("char-counter");
+        if (ta && counter) {
+          ta.addEventListener("input", () => {
+            counter.textContent = `${ta.value.length} / 255`;
+          });
+        }
+      },
+      preConfirm: () => {
+        const reason = document.getElementById("swal-rejection-reason")?.value?.trim();
+        if (!reason) {
+          Swal.showValidationMessage("Rejection reason is required.");
+          return false;
+        }
+        if (reason.length > 255) {
+          Swal.showValidationMessage("Reason must be 255 characters or fewer.");
+          return false;
+        }
+        return reason;
+      },
+    });
+
+    if (!isConfirmed) return;
+
+    setActionLoading(true);
+    try {
+      await AuthService.reviewStockRequest(id, { decision: "rejected", rejection_reason });
+      MySwal.fire({
+        icon: "success", title: "Rejected",
+        text: "Stock request rejected and the requester has been notified.",
+        timer: 2500, showConfirmButton: false,
+      });
+      fetchDetails();
+    } catch (err) {
+      console.error("reviewStockRequest reject:", err);
+      MySwal.fire({
+        icon: "error", title: "Error",
+        text: err.response?.data?.message || "Failed to reject request.",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
 
   const handleMarkReceived = async () => {
     const { isConfirmed } = await MySwal.fire({
@@ -216,7 +235,7 @@ const StockRequestDetails = () => {
 
     setActionLoading(true);
     try {
-      await AuthService.markStockRequestReceived(id);
+      await AuthService.markStockReceived(id);
       MySwal.fire({
         icon: "success", title: "Received!",
         text: "Stock delivery confirmed successfully.",
@@ -224,7 +243,7 @@ const StockRequestDetails = () => {
       });
       fetchDetails();
     } catch (err) {
-      console.error("markStockRequestReceived:", err);
+      console.error("markStockReceived:", err);
       MySwal.fire({
         icon: "error", title: "Error",
         text: err.response?.data?.message || "Failed to confirm delivery.",
@@ -234,9 +253,6 @@ const StockRequestDetails = () => {
     }
   };
 
-  // ─────────────────────────────────────────────────────────────
-  //  Loading / not-found guards
-  // ─────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -264,32 +280,27 @@ const StockRequestDetails = () => {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  //  Derived state
-  // ─────────────────────────────────────────────────────────────
 
-  const computedStatus = deriveStatus(request);
-  const statusCfg      = getStatusCfg(computedStatus);
-  const priorityCfg    = getPriorityCfg(request.priority);
+const computedStatus = request.status || "—";
+const statusCfg      = getStatusCfg(computedStatus);
+const priorityCfg    = getPriorityCfg(request.priority);
 
-  const isSuperAdmin  = request.is_super_admin  === true;
-  const isRecipient = request.is_recipient === true;
+  // const canReview =
+  //   request.can_review === true &&
+  //   request.review_at  === null ;
 
- 
-  const canApprove =
-    isSuperAdmin &&
-    ["Pending for Approval", "Followed Up for Approval", "Escalated Due to No Approval"].includes(
-      computedStatus
-    );
+  const canReview =
+    request.can_review === true &&
+    request.review_at  === null &&
+    request.rejection_reason === null;
 
-
-  
 
   const canReceive =
-    isRecipient &&
-    request.stock_id    !== null && request.stock_id    !== undefined &&
-    request.submitted_at !== null && request.submitted_at !== undefined &&
-    (request.delivered_at === null || request.delivered_at === undefined);
+    request.is_recipient === true &&
+    request.stock_id    != null &&
+    request.submitted_at != null &&
+    request.delivered_at == null &&
+     request.grn_timestamp == null;
 
   const totalQty = articles.reduce((s, a) => s + (Number(a.quantity) || 0), 0);
 
@@ -302,12 +313,13 @@ const StockRequestDetails = () => {
       })()
     : [];
 
-  
+
+const isApproved = request.review_at !== null && request.rejection_reason === null;
+
   return (
     <div className="page-wrapper">
       <div className="content">
 
-        {/* ── Page header ── */}
         <div className="page-header">
           <div className="add-item d-flex">
             <div className="page-title">
@@ -315,9 +327,11 @@ const StockRequestDetails = () => {
               <h6>Complete request information</h6>
             </div>
           </div>
+
           <div className="page-btn d-flex gap-2 flex-wrap">
 
-            {canApprove && (
+      
+            {canReview && (
               <button
                 className="btn btn-success"
                 onClick={handleApprove}
@@ -326,14 +340,28 @@ const StockRequestDetails = () => {
                 {actionLoading
                   ? <span className="spinner-border spinner-border-sm me-2" />
                   : <ThumbsUp size={16} className="me-2" />}
-                Approve Request
+                Approve
               </button>
             )}
 
-            {/* Confirm Delivery — only when stock_id + submitted_at are both present */}
+        
+            {canReview && (
+              <button
+                className="btn btn-danger"
+                onClick={handleReject}
+                disabled={actionLoading}
+              >
+                {actionLoading
+                  ? <span className="spinner-border spinner-border-sm me-2" />
+                  : <ThumbsDown size={16} className="me-2" />}
+                Reject
+              </button>
+            )}
+
+            {/* Confirm delivery  */}
             {canReceive && (
               <button
-                className="btn btn-primary"
+                className="btn btn-success"
                 onClick={handleMarkReceived}
                 disabled={actionLoading}
               >
@@ -350,7 +378,7 @@ const StockRequestDetails = () => {
           </div>
         </div>
 
-        {/* ── Status  ── */}
+        {/* ── Status alert ── */}
         <div className={`alert alert-${statusCfg.alertVariant} d-flex align-items-center mb-4`}>
           <StatusIcon icon={statusCfg.icon} size={20} />
           <div className="ms-3">
@@ -370,19 +398,41 @@ const StockRequestDetails = () => {
           </div>
         </div>
 
-        {/* ── Role  ── */}
-        {(isRecipient || isSuperAdmin) && (
+        {/* ── Role badge ── */}
+        {(request.is_recipient || request.can_review) && (
           <div className="alert alert-light py-2 mb-3 d-flex align-items-center gap-2">
             <User size={15} />
             <span className="small">
-              You are the{" "}
-              <strong>{isRecipient ? "Recipient" : "Supplier"}</strong>
-              {" "}on this request.
+              You are viewing this as{" "}
+              <strong>
+                {request.can_review
+                  ? "Inventory Controller"
+                  : request.is_recipient
+                  ? "Recipient"
+                  : "Supplier"}
+              </strong>.
             </span>
           </div>
         )}
 
-        {/* Info row */}
+        {/* ── Rejection reason banner ── */}
+        {(request.status || "").toLowerCase() === "rejected" && request.rejection_reason && (
+          <div className="alert alert-danger d-flex align-items-start gap-2 mb-4">
+            <AlertCircle size={18} className="flex-shrink-0 mt-1" />
+            <div>
+              <strong>Rejection Reason:</strong>
+              <p className="mb-0 mt-1">{request.rejection_reason}</p>
+              {request.reviewer_name && request.reviewer_name !== "No Decision Yet" && (
+                <p className="mb-0 mt-1 small text-muted">
+                  Rejected by <strong>{request.reviewer_name}</strong>
+                  {request.review_at ? ` · ${fmtDate(request.review_at)}` : ""}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── Route + Details cards ── */}
         <div className="row">
 
           {/* Route card */}
@@ -457,6 +507,7 @@ const StockRequestDetails = () => {
                   </div>
                 )}
 
+                {/* Follow-up & Escalation */}
                 <div className="row mb-3">
                   {request.follow_up_enabled !== undefined && (
                     <div className="col-6">
@@ -464,10 +515,8 @@ const StockRequestDetails = () => {
                       <span className={`badge ${request.follow_up_enabled ? "badge-linesuccess" : "badge-secondary"}`}>
                         {request.follow_up_enabled ? `${request.follow_up_days}d` : "Off"}
                       </span>
-                      {request.follow_up_sent_at && (
-                        <div className="text-muted" style={{ fontSize: 11 }}>
-                          Sent {fmtDate(request.follow_up_sent_at)}
-                        </div>
+                      {request.is_follow_up_sent && (
+                        <div className="text-muted" style={{ fontSize: 11 }}>Sent ✓</div>
                       )}
                     </div>
                   )}
@@ -477,15 +526,26 @@ const StockRequestDetails = () => {
                       <span className={`badge ${request.escalation_enabled ? "badge-linewarning" : "badge-secondary"}`}>
                         {request.escalation_enabled ? `${request.escalation_days}d` : "Off"}
                       </span>
-                      {request.escalated_at && (
-                        <div className="text-muted" style={{ fontSize: 11 }}>
-                          Escalated {fmtDate(request.escalated_at)}
-                        </div>
+                      {request.is_escalation_sent && (
+                        <div className="text-muted" style={{ fontSize: 11 }}>Sent ✓</div>
                       )}
                     </div>
                   )}
                 </div>
 
+                {/* Resolution Required */}
+                {request.resolution_required_enabled !== undefined && (
+                  <div className="mb-3">
+                    <p className="text-muted small mb-1">Resolution Required</p>
+                    <span className={`badge ${request.resolution_required_enabled ? "badge-linedanger" : "badge-secondary"}`}>
+                      {request.resolution_required_enabled ? `${request.resolution_required_days}d` : "Off"}
+                    </span>
+                    {request.is_resolution_required_sent && (
+                      <div className="text-muted" style={{ fontSize: 11 }}>Sent ✓</div>
+                    )}
+                  </div>
+                )}
+  
                 {ccEmails.length > 0 && (
                   <div className="mb-3">
                     <p className="text-muted small mb-1">
@@ -512,43 +572,61 @@ const StockRequestDetails = () => {
           </div>
         </div>
 
-        {/* ── Approval info ── */}
-        {request.approved_at && (
-          <div className="card mb-4">
-            <div className="card-body">
-              <h5 className="mb-4">
-                <ThumbsUp size={18} className="me-2 text-success" />
-                Approval Information
-              </h5>
-              <div className="row">
-                <div className="col-md-4 mb-3">
-                  <p className="text-muted small mb-1">Approved At</p>
-                  <p className="mb-0">
-                    <Calendar size={14} className="me-1" />
-                    {fmtDate(request.approved_at)}
-                  </p>
-                </div>
-                {request.scheduled_dispatch && (
-                  <div className="col-md-4 mb-3">
-                    <p className="text-muted small mb-1">Scheduled Dispatch</p>
-                    <p className="mb-0">
-                      <Truck size={14} className="me-1" />
-                      {fmtDate(request.scheduled_dispatch)}
-                    </p>
-                  </div>
-                )}
-                {request.stock_id && (
-                  <div className="col-md-4 mb-3">
-                    <p className="text-muted small mb-1">Linked Stock Flow</p>
-                    <span className="badge badge-primary" style={{ fontFamily: "monospace" }}>
-                      {request.stock_id}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+        {/* ── Reviewer info ── */}
+       
+
+      {request.reviewer_name && request.reviewer_name !== "No Decision Yet" && (
+  <div className="card mb-4">
+    <div className="card-body">
+      <h5 className="mb-4">
+        {isApproved
+          ? <><ThumbsUp size={18} className="me-2 text-success" />Approval Information</>
+          : <><ThumbsDown size={18} className="me-2 text-danger" />Rejection Information</>}
+      </h5>
+      <div className="row">
+        <div className="col-md-4 mb-3">
+          <p className="text-muted small mb-1">Reviewed By</p>
+          <p className="mb-0"><User size={14} className="me-1" />{request.reviewer_name}</p>
+        </div>
+        {request.review_at && (
+          <div className="col-md-4 mb-3">
+            <p className="text-muted small mb-1">
+              {isApproved ? "Approved At" : "Rejected At"}
+            </p>
+            <p className="mb-0">
+              <Calendar size={14} className="me-1" />{fmtDate(request.review_at)}
+            </p>
           </div>
         )}
+        {/* These only make sense for approved requests */}
+        {isApproved && request.dispatch_given_at && (
+          <div className="col-md-4 mb-3">
+            <p className="text-muted small mb-1">Dispatch Given At</p>
+            <p className="mb-0">
+              <Calendar size={14} className="me-1" />{fmtDate(request.dispatch_given_at)}
+            </p>
+          </div>
+        )}
+        {isApproved && request.scheduled_dispatch && (
+          <div className="col-md-4 mb-3">
+            <p className="text-muted small mb-1">Scheduled Dispatch</p>
+            <p className="mb-0">
+              <Truck size={14} className="me-1" />{fmtDate(request.scheduled_dispatch)}
+            </p>
+          </div>
+        )}
+        {isApproved && request.stock_id && (
+          <div className="col-md-4 mb-3">
+            <p className="text-muted small mb-1">Linked Stock Flow</p>
+            <span className="badge badge-primary" style={{ fontFamily: "monospace" }}>
+              {request.stock_id}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
 
         {/* ── Delivery confirmation ── */}
         {request.delivered_at && (
@@ -561,18 +639,12 @@ const StockRequestDetails = () => {
               <div className="row">
                 <div className="col-md-4 mb-3">
                   <p className="text-muted small mb-1">Delivered At</p>
-                  <p className="mb-0">
-                    <Calendar size={14} className="me-1" />
-                    {fmtDate(request.delivered_at)}
-                  </p>
+                  <p className="mb-0"><Calendar size={14} className="me-1" />{fmtDate(request.delivered_at)}</p>
                 </div>
                 {request.grn_timestamp && (
                   <div className="col-md-4 mb-3">
                     <p className="text-muted small mb-1">GRN Timestamp</p>
-                    <p className="mb-0">
-                      <Calendar size={14} className="me-1" />
-                      {fmtDate(request.grn_timestamp)}
-                    </p>
+                    <p className="mb-0"><Calendar size={14} className="me-1" />{fmtDate(request.grn_timestamp)}</p>
                   </div>
                 )}
               </div>
@@ -580,7 +652,7 @@ const StockRequestDetails = () => {
           </div>
         )}
 
-        {/* ── Articles table ── */}
+        {/* ── Articles table ─── */}
         <div className="card mb-4">
           <div className="card-body">
             <div className="d-flex align-items-center justify-content-between mb-3">
@@ -641,148 +713,186 @@ const StockRequestDetails = () => {
 
             <div className="timeline">
 
-              <div className="timeline-item d-flex align-items-start mb-3">
-                <div
-                  className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-primary text-white flex-shrink-0"
-                  style={{ width: 32, height: 32 }}
-                >
-                  <Send size={14} />
-                </div>
-                <div>
-                  <h6 className="mb-1">Request Created</h6>
-                  <p className="text-muted mb-0 small">
-                    Submitted by {request.recipient_name || "requester"}
-                    {request.created_at ? ` · ${fmtDate(request.created_at)}` : ""}
-                  </p>
-                </div>
-              </div>
+  {/* 1. Created — always first */}
+  <div className="timeline-item d-flex align-items-start mb-3">
+    <div className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-primary text-white flex-shrink-0"
+      style={{ width: 32, height: 32 }}>
+      <Send size={14} />
+    </div>
+    <div>
+      <h6 className="mb-1">Request Created</h6>
+      <p className="text-muted mb-0 small">
+        Submitted by {request.recipient_name || "requester"}
+        {request.created_at ? ` · ${fmtDate(request.created_at)}` : ""}
+      </p>
+    </div>
+  </div>
 
-              {request.follow_up_sent_at && (
-                <div className="timeline-item d-flex align-items-start mb-3">
-                  <div
-                    className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-info text-white flex-shrink-0"
-                    style={{ width: 32, height: 32 }}
-                  >
-                    <Mail size={14} />
-                  </div>
-                  <div>
-                    <h6 className="mb-1">Follow-up Sent</h6>
-                    <p className="text-muted mb-0 small">
-                      Automatic follow-up reminder sent · {fmtDate(request.follow_up_sent_at)}
-                    </p>
-                  </div>
-                </div>
-              )}
+  {/* 2. Follow-up */}
+  {request.is_follow_up_sent && (
+    <div className="timeline-item d-flex align-items-start mb-3">
+      <div className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-info text-white flex-shrink-0"
+        style={{ width: 32, height: 32 }}>
+        <Mail size={14} />
+      </div>
+      <div>
+        <h6 className="mb-1">Follow-up Sent</h6>
+        <p className="text-muted mb-0 small">Automatic follow-up reminder sent</p>
+      </div>
+    </div>
+  )}
 
-              {request.escalated_at && (
-                <div className="timeline-item d-flex align-items-start mb-3">
-                  <div
-                    className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-danger text-white flex-shrink-0"
-                    style={{ width: 32, height: 32 }}
-                  >
-                    <AlertCircle size={14} />
-                  </div>
-                  <div>
-                    <h6 className="mb-1">Escalated</h6>
-                    <p className="text-muted mb-0 small">
-                      Request escalated due to no response · {fmtDate(request.escalated_at)}
-                    </p>
-                  </div>
-                </div>
-              )}
+  {/* 3. Escalation */}
+  {request.is_escalation_sent && (
+    <div className="timeline-item d-flex align-items-start mb-3">
+      <div className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-danger text-white flex-shrink-0"
+        style={{ width: 32, height: 32 }}>
+        <AlertCircle size={14} />
+      </div>
+      <div>
+        <h6 className="mb-1">Escalated</h6>
+        <p className="text-muted mb-0 small">Request escalated due to no response</p>
+      </div>
+    </div>
+  )}
 
-              {request.approved_at && (
-                <div className="timeline-item d-flex align-items-start mb-3">
-                  <div
-                    className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-success text-white flex-shrink-0"
-                    style={{ width: 32, height: 32 }}
-                  >
-                    <ThumbsUp size={14} />
-                  </div>
-                  <div>
-                    <h6 className="mb-1">Approved</h6>
-                    <p className="text-muted mb-0 small">
-                      Approved by {request.supplier_name || "supplier"}
-                      {" · "}{fmtDate(request.approved_at)}
-                      {request.scheduled_dispatch
-                        ? ` · Dispatch by ${fmtDate(request.scheduled_dispatch)}`
-                        : ""}
-                    </p>
-                  </div>
-                </div>
-              )}
+  {/* 4a. Rejected */}
+  {request.review_at && !isApproved && (
+    <div className="timeline-item d-flex align-items-start mb-3">
+      <div className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-danger text-white flex-shrink-0"
+        style={{ width: 32, height: 32 }}>
+        <ThumbsDown size={14} />
+      </div>
+      <div>
+        <h6 className="mb-1">Rejected</h6>
+        <p className="text-muted mb-0 small">
+          {request.reviewer_name && request.reviewer_name !== "No Decision Yet"
+            ? `Rejected by ${request.reviewer_name}`
+            : "Request rejected"}
+          {request.review_at ? ` · ${fmtDate(request.review_at)}` : ""}
+        </p>
+        {request.rejection_reason && (
+          <p className="text-danger mb-0 small mt-1">
+            Reason: {request.rejection_reason}
+          </p>
+        )}
+      </div>
+    </div>
+  )}
 
-              {/* Stock flow linked — appears once stock_id is set */}
-              {request.stock_id && (
-                <div className="timeline-item d-flex align-items-start mb-3">
-                  <div
-                    className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-warning text-white flex-shrink-0"
-                    style={{ width: 32, height: 32 }}
-                  >
-                    <Package size={14} />
-                  </div>
-                  <div>
-                    <h6 className="mb-1">Stock Flow Created</h6>
-                    <p className="text-muted mb-0 small">
-                      Linked to stock flow{" "}
-                      <span className="badge badge-primary" style={{ fontFamily: "monospace" }}>
-                        {request.stock_id}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              )}
+  {/* 4b. Approved */}
+  {isApproved && request.review_at && (
+    <div className="timeline-item d-flex align-items-start mb-3">
+      <div className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-success text-white flex-shrink-0"
+        style={{ width: 32, height: 32 }}>
+        <ThumbsUp size={14} />
+      </div>
+      <div>
+        <h6 className="mb-1">Approved</h6>
+        <p className="text-muted mb-0 small">
+          {request.reviewer_name && request.reviewer_name !== "No Decision Yet"
+            ? `Approved by ${request.reviewer_name}`
+            : ""}
+          {request.review_at ? ` · ${fmtDate(request.review_at)}` : ""}
+        </p>
+      </div>
+    </div>
+  )}
 
-              {/* In Transit — appears once submitted_at is also set */}
-              {request.stock_id && request.submitted_at && (
-                <div className="timeline-item d-flex align-items-start mb-3">
-                  <div
-                    className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-info text-white flex-shrink-0"
-                    style={{ width: 32, height: 32 }}
-                  >
-                    <Truck size={14} />
-                  </div>
-                  <div>
-                    <h6 className="mb-1">In Transit</h6>
-                    <p className="text-muted mb-0 small">
-                      Stock dispatched · {fmtDate(request.submitted_at)}
-                    </p>
-                  </div>
-                </div>
-              )}
+  {/* 5. Dispatch date set */}
+  {isApproved && request.dispatch_given_at && (
+    <div className="timeline-item d-flex align-items-start mb-3">
+      <div className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-secondary text-white flex-shrink-0"
+        style={{ width: 32, height: 32 }}>
+        <Calendar size={14} />
+      </div>
+      <div>
+        <h6 className="mb-1">Dispatch Date Set</h6>
+        <p className="text-muted mb-0 small">
+          Supplier set dispatch deadline · {fmtDate(request.dispatch_given_at)}
+          {request.scheduled_dispatch
+            ? ` · Expected by ${fmtDate(request.scheduled_dispatch)}`
+            : ""}
+        </p>
+      </div>
+    </div>
+  )}
 
-              {request.delivered_at ? (
-                <div className="timeline-item d-flex align-items-start mb-3">
-                  <div
-                    className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-success text-white flex-shrink-0"
-                    style={{ width: 32, height: 32 }}
-                  >
-                    <CheckCircle size={14} />
-                  </div>
-                  <div>
-                    <h6 className="mb-1">Delivered</h6>
-                    <p className="text-muted mb-0 small">
-                      Delivery confirmed by {request.recipient_name || "recipient"}
-                      {" · "}{fmtDate(request.delivered_at)}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="timeline-item d-flex align-items-start">
-                  <div
-                    className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle border flex-shrink-0"
-                    style={{ width: 32, height: 32, borderStyle: "dashed" }}
-                  >
-                    <Package size={14} className="text-muted" />
-                  </div>
-                  <div>
-                    <h6 className="mb-1 text-muted">Awaiting Delivery</h6>
-                    <p className="text-muted mb-0 small">Pending confirmation from recipient</p>
-                  </div>
-                </div>
-              )}
+  {/* 6. Stock flow created (drafted, not yet submitted) */}
+  {request.stock_id && !request.submitted_at && (
+    <div className="timeline-item d-flex align-items-start mb-3">
+      <div className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-warning text-white flex-shrink-0"
+        style={{ width: 32, height: 32 }}>
+        <Package size={14} />
+      </div>
+      <div>
+        <h6 className="mb-1">Stock Flow Created</h6>
+        <p className="text-muted mb-0 small">
+          Draft linked to{" "}
+          <span className="badge badge-primary" style={{ fontFamily: "monospace" }}>
+            {request.stock_id}
+          </span>
+        </p>
+      </div>
+    </div>
+  )}
 
-            </div>
+  {/* 7. In transit (submitted) */}
+  {request.stock_id && request.submitted_at && (
+    <div className="timeline-item d-flex align-items-start mb-3">
+      <div className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-info text-white flex-shrink-0"
+        style={{ width: 32, height: 32 }}>
+        <Truck size={14} />
+      </div>
+      <div>
+        <h6 className="mb-1">In Transit</h6>
+        <p className="text-muted mb-0 small">
+          Stock dispatched under{" "}
+          <span className="badge badge-primary" style={{ fontFamily: "monospace" }}>
+            {request.stock_id}
+          </span>
+          {" · "}{fmtDate(request.submitted_at)}
+        </p>
+      </div>
+    </div>
+  )}
+
+  {/* 8. Delivered or Awaiting */}
+  {request.delivered_at ? (
+    <div className="timeline-item d-flex align-items-start mb-3">
+      <div className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle bg-success text-white flex-shrink-0"
+        style={{ width: 32, height: 32 }}>
+        <CheckCircle size={14} />
+      </div>
+      <div>
+        <h6 className="mb-1">Delivered</h6>
+        <p className="text-muted mb-0 small">
+          Delivery confirmed by {request.recipient_name || "recipient"}
+          {" · "}{fmtDate(request.delivered_at)}
+        </p>
+      </div>
+    </div>
+  ) : (
+    !request.review_at || isApproved ? (
+      // Only show "Awaiting" if not rejected
+      computedStatus !== "Rejected" && (
+        <div className="timeline-item d-flex align-items-start">
+          <div
+            className="timeline-icon me-3 d-flex align-items-center justify-content-center rounded-circle border flex-shrink-0"
+            style={{ width: 32, height: 32, borderStyle: "dashed" }}
+          >
+            <Package size={14} className="text-muted" />
+          </div>
+          <div>
+            <h6 className="mb-1 text-muted">Awaiting Delivery</h6>
+            <p className="text-muted mb-0 small">Pending confirmation from recipient</p>
+          </div>
+        </div>
+      )
+    ) : null
+  )}
+
+</div>
           </div>
         </div>
 

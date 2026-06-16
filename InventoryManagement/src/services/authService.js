@@ -214,6 +214,7 @@ const AuthService = {
 
 
 
+   
 getStockFlowMovement:(days = 30)  => axiosInstance.get("/auth/getStockFlowMovement/movement", { params: { days } }),
 
 getStockFlowWarehouseDist: () => axiosInstance.get("/auth/getStockFlowWarehouseDist/warehouse-dist"),
@@ -242,22 +243,30 @@ getStockFlowWarehouseDist: () => axiosInstance.get("/auth/getStockFlowWarehouseD
     axiosInstance.get(`/auth/getStockRequestById/${id}`),
   createStockRequest: (data) =>
     axiosInstance.post(`/auth/createStockRequest`, data),
+
+  reviewStockRequest: (id, data) =>
+  axiosInstance.patch(`/auth/reviewStockRequest/${id}`, data),
+
+
+  setStockTransferDeadline: (id, data) =>
+  axiosInstance.patch(`/auth/setStockTransferDeadline/${id}`,data),
+  
   markStockRequestRead: (data) =>
     axiosInstance.put("/auth/markStockRequestRead", data),
 
   approveStockRequest: (id, data) =>
     axiosInstance.patch(`/auth/approveStockRequest/${id}`, data),
 
-  // getStockRequestStats: () => axiosInstance.get(`/auth/getStockRequestStats`),
+  getStockRequestStats: () => axiosInstance.get("/auth/getStockRequestStats"),
+
+
 
   toggleStockRequestStar: (id, starred) =>
     axiosInstance.put(`/auth/editEmailTogglemail/${id}/star`, { starred }),
 
-  // markStockRequestRead: (data) => axiosInstance.put("/auth/markStockRequestRead", data),
-  markStockRequestReceived: (id) =>
+  // markStockReceived: (data) => axiosInstance.put("/auth/markStockReceived", data),
+  markStockReceived: (id) =>
     axiosInstance.patch(`/auth/confirmStockDelivery/${id}`),
-
-
 
 
   getStockTransfer: (params) =>
@@ -268,12 +277,12 @@ getStockFlowWarehouseDist: () => axiosInstance.get("/auth/getStockFlowWarehouseD
   getActiveStockRequests: () =>
     axiosInstance.get("/auth/getActiveStockRequests"),
   get_approved_stock_flow: (id) =>
-    axiosInstance.get(`/auth/getApprovedStock/${id}`),
+    axiosInstance.get(`/auth/getPendingStock/${id}`),
   getProfileByCode: (code) =>
     axiosInstance.get(`/auth/getProfileByCode/${code}`),
   getScanForTransfer: (params) =>
     axiosInstance.get(`/auth/scanProductForTransfer`, { params }),
-
+ 
   autoRemoveStock: (stock_id) =>
     axiosInstance.delete(`/auth/autoRemoveStock/${stock_id}`),
 
